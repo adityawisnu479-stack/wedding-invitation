@@ -20,10 +20,10 @@ const jost = Jost({ subsets: ["latin"], variable: "--font-jost" });
 const lato = Lato({ subsets: ["latin"], weight: ["300", "400", "700"], variable: "--font-lato" });
 
 export const metadata: Metadata = {
-  title: "The Wedding of Aditya & Ayu",
+  title: "The Wedding of Debrion & Nonaventa",
   description: "Dengan penuh rasa syukur, kami mengundang Anda untuk berbagi kebahagiaan di hari pernikahan kami.",
   openGraph: {
-    title: "The Wedding of Aditya & Ayu",
+    title: "The Wedding of Debrion & Nonaventa",
     description: "Kami menantikan kehadiran dan doa restu Anda.",
     type: "website",
   },

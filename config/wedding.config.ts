@@ -11,18 +11,18 @@ export const weddingConfig: InvitationContent = {
     source: "QS. Ar-Rum: 21",
   },
   groom: {
-    name: "Aditya",
-    fullName: "Aditya Pratama",
+    name: "Debrion",
+    fullName: "Debrion",
     father: "Bapak Sutrisno",
     mother: "Ibu Siti Rahayu",
-    instagram: "adityapratama",
+    instagram: "debrion",
   },
   bride: {
-    name: "Ayu",
-    fullName: "Ayu Lestari",
+    name: "Nonaventa",
+    fullName: "Nonaventa",
     father: "Bapak Hartono",
     mother: "Ibu Dewi Kartika",
-    instagram: "ayulestari",
+    instagram: "nonaventa",
   },
   events: [
     {
@@ -61,15 +61,15 @@ export const weddingConfig: InvitationContent = {
     {
       bank: "BCA",
       number: "1234567890",
-      holder: "Aditya Pratama",
+      holder: "Debrion",
     },
     {
       bank: "Mandiri",
       number: "0987654321",
-      holder: "Ayu Lestari",
+      holder: "Nonaventa",
     },
   ],
-  giftAddress: "Jl. Melati No. 12, Kebayoran Baru, Jakarta Selatan (a.n. Aditya Pratama)",
+  giftAddress: "Jl. Melati No. 12, Kebayoran Baru, Jakarta Selatan (a.n. Debrion)",
   gallery: [],
   photos: { cover: "", groom: "", bride: "" },
   waMessage:
