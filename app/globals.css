@@ -1,26 +1,101 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --font-serif: var(--font-cormorant), Georgia, serif;
+  --font-display: var(--font-playfair), Georgia, serif;
+  --font-sans: var(--font-jost), ui-sans-serif, system-ui, sans-serif;
+
+  --color-cream: #faf6f0;
+  --color-cream-deep: #f1e9dd;
+  --color-sage: #6b7c6e;
+  --color-sage-soft: #a8b5a5;
+  --color-gold: #c2a878;
+  --color-gold-soft: #e2d3b8;
+  --color-ink: #24211d;
+  --color-luxury: #0d1a16;
+  --color-luxury-soft: #152720;
+  --color-luxury-line: #2c4136;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    background: var(--color-cream);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+
+  ::selection {
+    background: var(--color-gold);
+    color: #fff;
+  }
+
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  input,
+  textarea,
+  select {
+    font-family: inherit;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes slow-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-slow-spin {
+  animation: slow-spin 9s linear infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, currentColor 18%, transparent), transparent);
+  animation: shimmer 1.4s infinite;
+}
+
+/* Ornamen sudut untuk template classic luxury */
+.ornament-frame {
+  background-image:
+    linear-gradient(var(--color-gold), var(--color-gold)),
+    linear-gradient(var(--color-gold), var(--color-gold)),
+    linear-gradient(var(--color-gold), var(--color-gold)),
+    linear-gradient(var(--color-gold), var(--color-gold));
+  background-size: 22px 1px, 1px 22px, 22px 1px, 1px 22px;
+  background-position: top left, top left, bottom right, bottom right;
+  background-repeat: no-repeat;
 }
