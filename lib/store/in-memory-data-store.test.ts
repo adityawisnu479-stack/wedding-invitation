@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import type { Invitation } from "../types.ts";
 import { InMemoryDataStore } from "./in-memory-data-store.ts";
 
 test("InMemoryDataStore: wishes.submit menambahkan doa baru dan memvalidasi input", async () => {
@@ -79,7 +80,10 @@ test("InMemoryDataStore: guests.add, toggleSent, dan remove mengelola daftar tam
   // Remove guest
   await store.guests.remove(dewiId);
   assert.equal(store.getState().guests.length, 1);
-  assert.equal(store.getState().guests.find((g) => g.id === dewiId), undefined);
+  assert.equal(
+    store.getState().guests.find((g) => g.id === dewiId),
+    undefined
+  );
 });
 
 test("InMemoryDataStore: invitation.update memutakhirkan properti undangan", async () => {
@@ -96,13 +100,16 @@ test("InMemoryDataStore: invitation.update memutakhirkan properti undangan", asy
           show_gallery: true,
           show_gift: true,
           active_music_url: null,
-          content: {} as any,
+          content: {} as unknown as Invitation["content"],
         },
       ],
     ]),
   });
 
-  await store.invitation.update("inv-1", { active_template: "classic-luxury", show_gift: false });
+  await store.invitation.update("inv-1", {
+    active_template: "classic-luxury",
+    show_gift: false,
+  });
   const inv = store.getState().invitations.get("inv-1");
   assert.equal(inv?.active_template, "classic-luxury");
   assert.equal(inv?.show_gift, false);
@@ -117,7 +124,9 @@ test("InMemoryDataStore: media.listTracks, uploadTrack, and uploadPhoto mengelol
   assert.equal(tracks.data.length, 2);
 
   // Upload track valid
-  const fakeMp3 = new File(["dummy audio"], "wedding-song.mp3", { type: "audio/mpeg" });
+  const fakeMp3 = new File(["dummy audio"], "wedding-song.mp3", {
+    type: "audio/mpeg",
+  });
   const uploadRes = await store.media.uploadTrack(fakeMp3);
   assert.ok(uploadRes.data);
   assert.equal(uploadRes.data.name, "wedding-song");
@@ -145,4 +154,44 @@ test("InMemoryDataStore: media.listTracks, uploadTrack, and uploadPhoto mengelol
   assert.equal(galleryRes.data.length, 2);
   assert.match(galleryRes.data[0], /mock-storage\.local\/photos\/gallery/);
   assert.match(galleryRes.data[1], /mock-storage\.local\/photos\/gallery/);
+});
+
+test("InMemoryDataStore: account seam (signIn, signUp, signOut, createInitialInvitation)", async () => {
+  const store = new InMemoryDataStore({ currentUser: null });
+
+  // createInitialInvitation tanpa login -> error
+  const unauthRes = await store.account.createInitialInvitation();
+  assert.equal(unauthRes.data, null);
+  assert.match(unauthRes.error?.message ?? "", /User tidak terautentikasi/);
+
+  // signIn
+  const loginRes = await store.account.signIn({
+    email: "andi@example.com",
+    password: "password123",
+  });
+  assert.ok(loginRes.data);
+  assert.equal(loginRes.data.user?.email, "andi@example.com");
+  assert.equal(loginRes.data.hasSession, true);
+
+  // createInitialInvitation setelah login
+  const invRes = await store.account.createInitialInvitation();
+  assert.ok(invRes.data);
+  assert.match(invRes.data.slug, /^undangan-/);
+  assert.equal(invRes.data.content.groom.name, "Nama Pria");
+  assert.equal(store.getState().invitations.size, 1);
+
+  // tenant-scoped media upload
+  const fakeImg = new File(["dummy img"], "groom.jpg", { type: "image/jpeg" });
+  const photoRes = await store.media.uploadPhoto("groom", fakeImg, {
+    invitationId: invRes.data.id,
+  });
+  assert.ok(photoRes.data);
+  assert.match(
+    photoRes.data,
+    new RegExp(`${loginRes.data.user?.id}/${invRes.data.id}/groom`)
+  );
+
+  // signOut
+  await store.account.signOut();
+  assert.equal(store.getState().currentUser, null);
 });

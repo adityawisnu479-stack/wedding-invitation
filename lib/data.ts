@@ -35,7 +35,10 @@ export async function getPublicInvitation(slug?: string): Promise<Invitation> {
   }
 }
 
-export async function getWishes(invitationId: string, limit = 40): Promise<Wish[]> {
+export async function getWishes(
+  invitationId: string,
+  limit = 40
+): Promise<Wish[]> {
   if (invitationId === "local") return [];
   const supabase = await supabaseServer();
   if (!supabase) return [];
@@ -47,6 +50,21 @@ export async function getWishes(invitationId: string, limit = 40): Promise<Wish[
     .order("created_at", { ascending: false })
     .limit(limit);
   return (data as Wish[] | null) ?? [];
+}
+
+export type InvitationResolution =
+  | { status: "found"; invitation: Invitation; wishes: Wish[] }
+  | { status: "not_found" };
+
+export async function resolvePublicInvitation(
+  slug?: string
+): Promise<InvitationResolution> {
+  const invitation = await getPublicInvitation(slug);
+  if (invitation.id === "local" && slug && slug !== "default") {
+    return { status: "not_found" };
+  }
+  const wishes = await getWishes(invitation.id);
+  return { status: "found", invitation, wishes };
 }
 
 export type DashboardData = {
@@ -83,7 +101,11 @@ export async function getDashboardData(): Promise<DashboardData | null> {
   }
 
   const [{ data: guests }, { data: wishes }] = await Promise.all([
-    supabase.from("guests").select("*").eq("invitation_id", invitation.id).order("created_at"),
+    supabase
+      .from("guests")
+      .select("*")
+      .eq("invitation_id", invitation.id)
+      .order("created_at"),
     supabase
       .from("rsvps_and_wishes")
       .select("*")

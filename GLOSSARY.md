@@ -5,34 +5,53 @@ Dokumentasi terminologi domain untuk sistem wedding invitation. Bebas dari detai
 ---
 
 ### Invitation (Undangan)
+
 Entitas utama konfigurasi undangan pernikahan milik pengguna, mencakup data kedua mempelai, cerita cinta, galeri foto, amplop digital, preferensi musik latar, serta template visual aktif yang dipilih.
 
 ### Guest (Tamu)
+
 Penerima undangan yang terdaftar dalam daftar tamu pemilik acara, memiliki kategori (misal: Reguler, Keluarga, VIP), kontak, dan status pengiriman link undangan personalisasi.
 
 ### Wish & RSVP (Doa & Konfirmasi Kehadiran)
+
 Catatan ucapan/doa dan konfirmasi kehadiran (hadir, tidak hadir, masih ragu beserta jumlah orang yang hadir) yang dikirimkan oleh tamu undangan.
 
 ### Template (Tema Tampilan)
+
 Variasi visual dan gaya presentasi undangan saat dibuka oleh tamu (misal: Modern Minimalist atau Classic Luxury).
 
 ### Template Engine
+
 Orkestrator presentasi yang menyusun urutan bagian undangan (hero, mempelai, jadwal acara, galeri, amplop, dan formulir RSVP) berdasarkan konfigurasi undangan dan tema aktif.
 
 ### Data Store
+
 Modul repositori penyimpanan data yang menyediakan operasi pembacaan dan pemutakhiran data undangan, daftar tamu, doa/RSVP, serta penyimpanan aset media tanpa mengekspos mekanisme transmisi jaringan atau vendor database ke komponen pemanggil.
 
 ### Media Asset (Aset Media)
+
 Berkas visual (foto sampul, avatar mempelai, galeri foto) dan berkas audio musik latar yang diunggah dan dikaitkan dengan konfigurasi undangan.
 
 ### Dashboard Store
+
 Modul penyedia state reaktif dan aksi terpusat untuk antarmuka dashboard pemilik acara. Mengelola sinkronisasi lokal dan mutasi terhadap Data Store secara transparan, termasuk mekanisme transisi dan error rollback.
 
 ### Tenant & Account (Pemilik Acara / Akun Pengguna)
+
 Entitas pengguna terotentikasi yang memiliki hak kelola atas satu entitas undangan pernikahan, daftar tamu, doa, serta kuota berkas media dalam repositori terisolasi.
 
 ### Invitation Slug (Tengara Tautan Undangan)
-Pengidentifikasi alfanumerik unik yang menjadi segmen path URL publik (`/u/[slug]`), dapat dipersonalisasi oleh pemilik acara dengan ketentuan tidak bentrok dengan rute sistem terdaftar (*reserved routes*).
+
+Pengidentifikasi alfanumerik unik yang menjadi segmen path URL publik (`/u/[slug]`), dapat dipersonalisasi oleh pemilik acara dengan ketentuan tidak bentrok dengan rute sistem terdaftar (_reserved routes_).
 
 ### Starter Template Content (Konten Awal Undangan)
+
 Struktur data awal netral (placeholder generik) yang diinjeksikan saat pembuatan undangan baru agar tampilan pratinjau tetap fungsional tanpa memuat data personal akun lain.
+
+### Account Seam (Seam Autentikasi & Akun)
+
+Titik batas antarmuka penyimpanan data yang mengelola siklus hidup otentikasi sesi pengguna (masuk, daftar, keluar) serta penyediaan (_provisioning_) otomatis entitas undangan pertama kali tanpa mengekspos protokol identitas pihak ketiga ke komponen tampilan.
+
+### Public Invitation Resolution (Resolusi Undangan Publik)
+
+Mekanisme kueri terpadu untuk menerjemahkan identifier slug dari rute publik menjadi status entitas undangan beserta seluruh ucapan/doa terlampir dalam satu representasi terdiskriminasi (_found_ atau _not found_).

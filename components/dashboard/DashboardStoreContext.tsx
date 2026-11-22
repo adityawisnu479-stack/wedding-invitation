@@ -1,6 +1,11 @@
 "use client";
 
-import React, { createContext, useContext, useState, useTransition } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useTransition,
+} from "react";
 import type { Guest, Invitation, Wish } from "@/lib/types";
 import { useDataStore, type NewGuestInput } from "@/lib/store";
 
@@ -11,13 +16,31 @@ export interface DashboardStore {
   savingKey: string | null;
   actions: {
     setInvitationData: (invitation: Invitation) => void;
-    addGuests: (rows: NewGuestInput[]) => Promise<{ success: boolean; error?: string }>;
-    removeGuest: (guest: Guest) => Promise<{ success: boolean; error?: string }>;
-    toggleGuestSent: (guest: Guest) => Promise<{ success: boolean; error?: string }>;
-    toggleWishHidden: (wish: Wish) => Promise<{ success: boolean; error?: string }>;
+    addGuests: (
+      rows: NewGuestInput[]
+    ) => Promise<{ success: boolean; error?: string }>;
+    removeGuest: (
+      guest: Guest
+    ) => Promise<{ success: boolean; error?: string }>;
+    toggleGuestSent: (
+      guest: Guest
+    ) => Promise<{ success: boolean; error?: string }>;
+    toggleWishHidden: (
+      wish: Wish
+    ) => Promise<{ success: boolean; error?: string }>;
     removeWish: (wish: Wish) => Promise<{ success: boolean; error?: string }>;
-    updateInvitation: (patch: Partial<Invitation>, key?: string) => Promise<{ success: boolean; error?: string }>;
-    updateContent: (patch: Partial<Invitation["content"]>, key?: string) => Promise<{ success: boolean; error?: string }>;
+    updateInvitation: (
+      patch: Partial<Invitation>,
+      key?: string
+    ) => Promise<{ success: boolean; error?: string }>;
+    updateContent: (
+      patch: Partial<Invitation["content"]>,
+      key?: string
+    ) => Promise<{ success: boolean; error?: string }>;
+    updateSection: <K extends keyof Invitation["content"]>(
+      section: K,
+      value: Invitation["content"][K]
+    ) => Promise<{ success: boolean; error?: string }>;
   };
 }
 
@@ -78,20 +101,27 @@ export function DashboardProvider({
       }
       startTransition(() => {
         setGuests((prev) =>
-          prev.map((item) => (item.id === guest.id ? { ...item, is_sent: !item.is_sent } : item)),
+          prev.map((item) =>
+            item.id === guest.id ? { ...item, is_sent: !item.is_sent } : item
+          )
         );
       });
       return { success: true };
     },
 
     toggleWishHidden: async (wish: Wish) => {
-      const { error } = await store.wishes.toggleHidden(wish.id, wish.is_hidden);
+      const { error } = await store.wishes.toggleHidden(
+        wish.id,
+        wish.is_hidden
+      );
       if (error) {
         return { success: false, error: error.message };
       }
       startTransition(() => {
         setWishes((prev) =>
-          prev.map((item) => (item.id === wish.id ? { ...item, is_hidden: !item.is_hidden } : item)),
+          prev.map((item) =>
+            item.id === wish.id ? { ...item, is_hidden: !item.is_hidden } : item
+          )
         );
       });
       return { success: true };
@@ -108,7 +138,10 @@ export function DashboardProvider({
       return { success: true };
     },
 
-    updateInvitation: async (patch: Partial<Invitation>, key = "invitation") => {
+    updateInvitation: async (
+      patch: Partial<Invitation>,
+      key = "invitation"
+    ) => {
       setSavingKey(key);
       const { error } = await store.invitation.update(invitation.id, patch);
       setSavingKey(null);
@@ -121,8 +154,24 @@ export function DashboardProvider({
       return { success: true };
     },
 
-    updateContent: async (patch: Partial<Invitation["content"]>, key = "content") => {
-      return actions.updateInvitation({ content: { ...invitation.content, ...patch } }, key);
+    updateContent: async (
+      patch: Partial<Invitation["content"]>,
+      key = "content"
+    ) => {
+      return actions.updateInvitation(
+        { content: { ...invitation.content, ...patch } },
+        key
+      );
+    },
+
+    updateSection: async <K extends keyof Invitation["content"]>(
+      section: K,
+      value: Invitation["content"][K]
+    ) => {
+      return actions.updateContent(
+        { [section]: value } as Partial<Invitation["content"]>,
+        String(section)
+      );
     },
   };
 
@@ -134,13 +183,19 @@ export function DashboardProvider({
     actions,
   };
 
-  return <DashboardStoreContext.Provider value={value}>{children}</DashboardStoreContext.Provider>;
+  return (
+    <DashboardStoreContext.Provider value={value}>
+      {children}
+    </DashboardStoreContext.Provider>
+  );
 }
 
 export function useDashboardStore(): DashboardStore {
   const ctx = useContext(DashboardStoreContext);
   if (!ctx) {
-    throw new Error("useDashboardStore harus digunakan di dalam DashboardProvider");
+    throw new Error(
+      "useDashboardStore harus digunakan di dalam DashboardProvider"
+    );
   }
   return ctx;
 }

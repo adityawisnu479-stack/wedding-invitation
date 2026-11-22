@@ -1,12 +1,20 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ExternalLink, HeartHandshake, LayoutDashboard, LogOut, Settings2, Sparkles, Users } from "lucide-react";
+import {
+  ExternalLink,
+  HeartHandshake,
+  LayoutDashboard,
+  LogOut,
+  Settings2,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { createStarterInvitationContent, weddingConfig } from "@/config/wedding.config";
+import { weddingConfig } from "@/config/wedding.config";
 import type { DashboardData } from "@/lib/data";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { useDataStore } from "@/lib/store";
 import type { Invitation } from "@/lib/types";
 import { ToastProvider, useToast } from "@/components/ui/Toast";
 import { AppearanceTab } from "./AppearanceTab";
@@ -42,6 +50,7 @@ export function DashboardShell({ data }: { data: DashboardData }) {
 function DashboardInner({ data }: { data: DashboardData }) {
   const router = useRouter();
   const toast = useToast();
+  const store = useDataStore();
   const { invitation, actions } = useDashboardStore();
   const [tab, setTab] = useState<TabId>("overview");
   const [creating, setCreating] = useState(false);
@@ -50,34 +59,27 @@ function DashboardInner({ data }: { data: DashboardData }) {
 
   const createInvitation = async () => {
     setCreating(true);
-    const client = supabaseBrowser();
-    const {
-      data: { user },
-    } = await client.auth.getUser();
-    if (!user) {
-      router.replace("/login");
-      return;
-    }
-    // Buat slug unik per user agar tidak terjadi duplicate key 409 pada unique constraint
-    const randomSuffix = Math.random().toString(36).substring(2, 7);
-    const slug = `undangan-${user.id.slice(0, 8)}-${randomSuffix}`;
-
-    const { data: created, error } = await client
-      .from("invitations")
-      .insert({ user_id: user.id, slug, content: createStarterInvitationContent() })
-      .select()
-      .single();
+    const res = await store.account.createInitialInvitation();
     setCreating(false);
-    if (error) return toast("Gagal membuat undangan", "error");
-    
-    // Sinkronkan state store dan refresh data server
-    actions.setInvitationData(created as Invitation);
-    router.refresh();
-    toast("Undangan berhasil dibuat");
+
+    if (res.error) {
+      if (res.unauthenticated) {
+        router.replace("/login");
+        return;
+      }
+      return toast("Gagal membuat undangan", "error");
+    }
+
+    if (res.data) {
+      // Sinkronkan state store dan refresh data server
+      actions.setInvitationData(res.data);
+      router.refresh();
+      toast("Undangan berhasil dibuat");
+    }
   };
 
   const logout = async () => {
-    await supabaseBrowser().auth.signOut();
+    await store.account.signOut();
     router.replace("/login");
   };
 
@@ -151,22 +153,40 @@ function DashboardInner({ data }: { data: DashboardData }) {
         {needsSetup ? (
           <div className={`${cardClass} text-center`}>
             <Sparkles className="mx-auto text-sage" size={28} />
-            <h1 className="mt-3 text-base font-semibold">Buat undangan pertamamu</h1>
+            <h1 className="mt-3 text-base font-semibold">
+              Buat undangan pertamamu
+            </h1>
             <p className="mx-auto mt-1 max-w-sm text-sm leading-relaxed text-ink/55">
-              Data acara diambil dari <code className="rounded bg-ink/5 px-1 text-xs">config/wedding.config.ts</code>.
-              Setelah dibuat, kamu bisa mengatur tamu, RSVP, desain, dan musik di sini.
+              Data acara diambil dari{" "}
+              <code className="rounded bg-ink/5 px-1 text-xs">
+                config/wedding.config.ts
+              </code>
+              . Setelah dibuat, kamu bisa mengatur tamu, RSVP, desain, dan musik
+              di sini.
             </p>
-            <button type="button" onClick={createInvitation} disabled={creating} className={`${primaryBtn} mt-4`}>
+            <button
+              type="button"
+              onClick={createInvitation}
+              disabled={creating}
+              className={`${primaryBtn} mt-4`}
+            >
               {creating ? "Membuat..." : "Buat undangan"}
             </button>
           </div>
         ) : (
-          <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+          >
             {tab === "overview" ? <OverviewTab /> : null}
             {tab === "content" ? <ContentTab /> : null}
             {tab === "guests" ? (
               <GuestsTab
-                waMessage={invitation.content.waMessage || weddingConfig.waMessage}
+                waMessage={
+                  invitation.content.waMessage || weddingConfig.waMessage
+                }
                 slug={invitation.slug}
               />
             ) : null}
@@ -184,7 +204,9 @@ function DashboardInner({ data }: { data: DashboardData }) {
             >
               <ExternalLink size={14} /> Buka undangan
             </a>
-            <p className="text-[11px] text-ink/30">Undangan pernikahan · {new Date().getFullYear()}</p>
+            <p className="text-[11px] text-ink/30">
+              Undangan pernikahan · {new Date().getFullYear()}
+            </p>
           </div>
         ) : null}
       </main>

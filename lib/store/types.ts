@@ -18,6 +18,7 @@ export type NewGuestInput = {
 export type StoreResult<T> = {
   data: T | null;
   error: Error | null;
+  unauthenticated?: boolean;
 };
 
 export type TrackItem = {
@@ -27,14 +28,38 @@ export type TrackItem = {
 
 export type PhotoFolder = "cover" | "groom" | "bride" | "gallery";
 
+export type AuthCredentials = {
+  email: string;
+  password: string;
+};
+
+export type AuthUser = {
+  id: string;
+  email?: string;
+};
+
+export type AuthSessionResult = {
+  user: AuthUser | null;
+  hasSession: boolean;
+};
+
 export interface DataStore {
+  account: {
+    signIn(creds: AuthCredentials): Promise<StoreResult<AuthSessionResult>>;
+    signUp(creds: AuthCredentials): Promise<StoreResult<AuthSessionResult>>;
+    signOut(): Promise<StoreResult<void>>;
+    createInitialInvitation(): Promise<StoreResult<Invitation>>;
+  };
   wishes: {
     submit(input: WishInput): Promise<StoreResult<Wish>>;
     toggleHidden(id: string, current: boolean): Promise<StoreResult<void>>;
     remove(id: string): Promise<StoreResult<void>>;
   };
   guests: {
-    add(invitationId: string, rows: NewGuestInput[]): Promise<StoreResult<Guest[]>>;
+    add(
+      invitationId: string,
+      rows: NewGuestInput[]
+    ): Promise<StoreResult<Guest[]>>;
     toggleSent(id: string, current: boolean): Promise<StoreResult<void>>;
     remove(id: string): Promise<StoreResult<void>>;
   };
@@ -43,8 +68,19 @@ export interface DataStore {
   };
   media: {
     listTracks(): Promise<StoreResult<TrackItem[]>>;
-    uploadTrack(file: File): Promise<StoreResult<TrackItem>>;
-    uploadPhoto(folder: PhotoFolder, file: File): Promise<StoreResult<string>>;
-    uploadPhotos(folder: "gallery", files: File[]): Promise<StoreResult<string[]>>;
+    uploadTrack(
+      file: File,
+      options?: { invitationId?: string }
+    ): Promise<StoreResult<TrackItem>>;
+    uploadPhoto(
+      folder: PhotoFolder,
+      file: File,
+      options?: { invitationId?: string }
+    ): Promise<StoreResult<string>>;
+    uploadPhotos(
+      folder: "gallery",
+      files: File[],
+      options?: { invitationId?: string }
+    ): Promise<StoreResult<string[]>>;
   };
 }

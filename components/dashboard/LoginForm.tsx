@@ -5,10 +5,11 @@ import { ArrowLeft, Loader2, LogIn, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { useDataStore } from "@/lib/store";
 
 export function LoginForm() {
   const router = useRouter();
+  const store = useDataStore();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,10 +23,8 @@ export function LoginForm() {
     setSuccess("");
     setPending(true);
 
-    const client = supabaseBrowser();
-
     if (mode === "signin") {
-      const { error: authError } = await client.auth.signInWithPassword({
+      const { error: authError } = await store.account.signIn({
         email: email.trim(),
         password,
       });
@@ -35,7 +34,7 @@ export function LoginForm() {
         setError(
           authError.message.toLowerCase().includes("invalid")
             ? "Email atau password salah."
-            : `Gagal masuk: ${authError.message}`,
+            : `Gagal masuk: ${authError.message}`
         );
         return;
       }
@@ -44,7 +43,7 @@ export function LoginForm() {
       router.refresh();
     } else {
       // Sign Up
-      const { data, error: signUpError } = await client.auth.signUp({
+      const { data, error: signUpError } = await store.account.signUp({
         email: email.trim(),
         password,
       });
@@ -57,13 +56,15 @@ export function LoginForm() {
       }
 
       // Jika user langsung terautentikasi (email confirmation dimatikan di Supabase)
-      if (data?.session) {
+      if (data?.hasSession) {
         router.replace("/dashboard");
         router.refresh();
         return;
       }
 
-      setSuccess("Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi atau coba masuk.");
+      setSuccess(
+        "Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi atau coba masuk."
+      );
       setMode("signin");
     }
   };
@@ -86,7 +87,9 @@ export function LoginForm() {
             setSuccess("");
           }}
           className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition ${
-            mode === "signin" ? "bg-white text-ink shadow-xs" : "text-ink/50 hover:text-ink"
+            mode === "signin"
+              ? "bg-white text-ink shadow-xs"
+              : "text-ink/50 hover:text-ink"
           }`}
         >
           Masuk
@@ -99,7 +102,9 @@ export function LoginForm() {
             setSuccess("");
           }}
           className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition ${
-            mode === "signup" ? "bg-white text-ink shadow-xs" : "text-ink/50 hover:text-ink"
+            mode === "signup"
+              ? "bg-white text-ink shadow-xs"
+              : "text-ink/50 hover:text-ink"
           }`}
         >
           Daftar Akun
@@ -117,7 +122,9 @@ export function LoginForm() {
 
       <div className="mt-5 space-y-4">
         <label className="block">
-          <span className="text-xs font-medium uppercase tracking-[0.15em] text-ink/45">Email</span>
+          <span className="text-xs font-medium uppercase tracking-[0.15em] text-ink/45">
+            Email
+          </span>
           <input
             type="email"
             autoComplete="email"
@@ -129,10 +136,14 @@ export function LoginForm() {
         </label>
 
         <label className="block">
-          <span className="text-xs font-medium uppercase tracking-[0.15em] text-ink/45">Password</span>
+          <span className="text-xs font-medium uppercase tracking-[0.15em] text-ink/45">
+            Password
+          </span>
           <input
             type="password"
-            autoComplete={mode === "signin" ? "current-password" : "new-password"}
+            autoComplete={
+              mode === "signin" ? "current-password" : "new-password"
+            }
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             placeholder="Minimal 6 karakter"
