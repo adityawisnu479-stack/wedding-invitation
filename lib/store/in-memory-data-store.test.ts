@@ -30,7 +30,7 @@ test("InMemoryDataStore: wishes.submit menambahkan doa baru dan memvalidasi inpu
 
   // Submit sukses
   const success = await store.wishes.submit({
-    invitation_id: "inv-1",
+    invitation_id: "local",
     guest_name: "Budi Pratama",
     attendance: "hadir",
     pax: 2,

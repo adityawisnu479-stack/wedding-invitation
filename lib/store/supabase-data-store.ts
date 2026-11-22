@@ -152,14 +152,6 @@ export class SupabaseDataStore implements DataStore {
   };
   wishes = {
     submit: async (input: WishInput): Promise<StoreResult<Wish>> => {
-      if (!supabaseConfigured || input.invitation_id === "local") {
-        return {
-          data: null,
-          error: new Error(
-            "Form belum aktif: database Supabase belum dikonfigurasi."
-          ),
-        };
-      }
       if (input.guest_name.trim().length < 2) {
         return { data: null, error: new Error("Nama minimal 2 karakter.") };
       }
@@ -168,6 +160,22 @@ export class SupabaseDataStore implements DataStore {
           data: null,
           error: new Error("Tulis doa atau ucapan dulu ya."),
         };
+      }
+
+      // Mode Demo / Showcase: pada contoh undangan (id === "local") atau saat Supabase belum disetel,
+      // simulasikan pengiriman sukses secara lokal agar pengunjung dapat mencoba interaksi form.
+      if (!supabaseConfigured || input.invitation_id === "local") {
+        const demoWish: Wish = {
+          id: `demo-wish-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          invitation_id: input.invitation_id,
+          guest_name: input.guest_name.trim(),
+          attendance: input.attendance,
+          pax: input.attendance === "hadir" ? input.pax : 0,
+          message: input.message.trim(),
+          is_hidden: false,
+          created_at: new Date().toISOString(),
+        };
+        return { data: demoWish, error: null };
       }
 
       try {

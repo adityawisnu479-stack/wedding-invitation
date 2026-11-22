@@ -110,12 +110,6 @@ export class InMemoryDataStore implements DataStore {
 
   wishes = {
     submit: async (input: WishInput): Promise<StoreResult<Wish>> => {
-      if (input.invitation_id === "local") {
-        return {
-          data: null,
-          error: new Error("Form belum aktif: database belum dikonfigurasi."),
-        };
-      }
       if (input.guest_name.trim().length < 2) {
         return { data: null, error: new Error("Nama minimal 2 karakter.") };
       }
