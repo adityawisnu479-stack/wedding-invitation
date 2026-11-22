@@ -37,8 +37,46 @@ export function waShareUrl(phone: string | null, message: string): string {
   return phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}`;
 }
 
+export const RESERVED_SLUGS = new Set([
+  "dashboard",
+  "login",
+  "api",
+  "u",
+  "undangan",
+  "admin",
+  "settings",
+  "auth",
+  "static",
+  "public",
+  "default",
+]);
+
+export function validateSlug(raw: string): { valid: boolean; slug: string; error?: string } {
+  const slug = raw
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  if (!slug) {
+    return { valid: false, slug: "", error: "Slug tidak boleh kosong." };
+  }
+  if (slug.length < 3) {
+    return { valid: false, slug, error: "Slug minimal 3 karakter." };
+  }
+  if (slug.length > 50) {
+    return { valid: false, slug, error: "Slug maksimal 50 karakter." };
+  }
+  if (RESERVED_SLUGS.has(slug)) {
+    return { valid: false, slug, error: `Kata '${slug}' tidak dapat digunakan sebagai slug.` };
+  }
+
+  return { valid: true, slug };
+}
+
 export function inviteUrl(origin: string, slug: string, guestName?: string): string {
-  const base = `${origin}/undangan`;
+  const base = slug && slug !== "default" ? `${origin}/u/${encodeURIComponent(slug)}` : `${origin}/undangan`;
   return guestName ? `${base}?to=${encodeURIComponent(guestName)}` : base;
 }
 

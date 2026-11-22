@@ -78,3 +78,63 @@ export const weddingConfig: InvitationContent = {
 
 /** Dipakai jika kolom active_music_url masih kosong. */
 export const defaultMusicUrl = "";
+
+/**
+ * Konten awal netral untuk pembuatan undangan baru pada akun baru (multi-tenant).
+ * Menghindari kebocoran data pribadi akun sebelumnya.
+ */
+export function createStarterInvitationContent(): InvitationContent {
+  const futureDate = new Date();
+  futureDate.setDate(futureDate.getDate() + 30);
+  const futureDateIso = futureDate.toISOString();
+
+  return {
+    quote: {
+      text: "Dan di antara tanda-tanda kekuasaan-Nya ialah Dia menciptakan untukmu pasangan hidup dari jenismu sendiri, supaya kamu dapat ketenangan hati dan menjadikan kasih sayang di antara kamu.",
+      source: "QS. Ar-Rum: 21",
+    },
+    groom: {
+      name: "Nama Pria",
+      fullName: "Nama Lengkap Mempelai Pria",
+      father: "Bapak ...",
+      mother: "Ibu ...",
+      instagram: "",
+    },
+    bride: {
+      name: "Nama Wanita",
+      fullName: "Nama Lengkap Mempelai Wanita",
+      father: "Bapak ...",
+      mother: "Ibu ...",
+      instagram: "",
+    },
+    events: [
+      {
+        kind: "Akad Nikah",
+        date: futureDateIso,
+        place: "Masjid / Lokasi Akad",
+        address: "Alamat lengkap lokasi akad nikah",
+        mapsUrl: "",
+      },
+      {
+        kind: "Resepsi",
+        date: futureDateIso,
+        place: "Gedung / Tempat Resepsi",
+        address: "Alamat lengkap lokasi resepsi pernikahan",
+        mapsUrl: "",
+      },
+    ],
+    loveStory: [
+      {
+        date: new Date().getFullYear().toString(),
+        title: "Awal Pertemuan",
+        text: "Kisah perjalanan cinta dan komitmen kami untuk melangkah bersama menuju jenjang pernikahan.",
+      },
+    ],
+    gift: [],
+    giftAddress: "",
+    gallery: [],
+    photos: { cover: "", groom: "", bride: "" },
+    waMessage:
+      "Assalamualaikum {guest} 🌸\n\nTanpa mengurangi rasa hormat, kami mengundang Anda untuk hadir di pernikahan kami:\n\n{url}\n\nMerupakan suatu kehormatan bagi kami apabila Anda berkenan hadir. Terima kasih.",
+  };
+}

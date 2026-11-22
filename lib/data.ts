@@ -16,18 +16,19 @@ export const localInvitation: Invitation = {
   content: weddingConfig,
 };
 
-export async function getPublicInvitation(): Promise<Invitation> {
+export async function getPublicInvitation(slug?: string): Promise<Invitation> {
   if (!supabaseConfigured) return localInvitation;
   const supabase = await supabaseServer();
   if (!supabase) return localInvitation;
 
   try {
-    const { data } = await supabase
-      .from("invitations")
-      .select("*")
-      .order("created_at")
-      .limit(1)
-      .maybeSingle();
+    let query = supabase.from("invitations").select("*");
+    if (slug) {
+      query = query.eq("slug", slug);
+    } else {
+      query = query.order("created_at");
+    }
+    const { data } = await query.limit(1).maybeSingle();
     return (data as Invitation | null) ?? localInvitation;
   } catch {
     return localInvitation;

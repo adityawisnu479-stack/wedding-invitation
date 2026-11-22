@@ -10,6 +10,7 @@ export interface DashboardStore {
   wishes: Wish[];
   savingKey: string | null;
   actions: {
+    setInvitationData: (invitation: Invitation) => void;
     addGuests: (rows: NewGuestInput[]) => Promise<{ success: boolean; error?: string }>;
     removeGuest: (guest: Guest) => Promise<{ success: boolean; error?: string }>;
     toggleGuestSent: (guest: Guest) => Promise<{ success: boolean; error?: string }>;
@@ -41,6 +42,11 @@ export function DashboardProvider({
   const [, startTransition] = useTransition();
 
   const actions: DashboardStore["actions"] = {
+    setInvitationData: (inv: Invitation) => {
+      startTransition(() => {
+        setInvitation(inv);
+      });
+    },
     addGuests: async (rows: NewGuestInput[]) => {
       const { data, error } = await store.guests.add(invitation.id, rows);
       if (error) {

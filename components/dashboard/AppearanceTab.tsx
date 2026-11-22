@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Check,
   ExternalLink,
+  Globe,
   ImagePlus,
   Loader2,
   Music2,
@@ -18,8 +19,9 @@ import { useDataStore } from "@/lib/store";
 import type { PhotoFolder, TrackItem } from "@/lib/store/types";
 import type { Invitation, TemplateId } from "@/lib/types";
 import { useToast } from "@/components/ui/Toast";
+import { validateSlug } from "@/lib/format";
 import { useDashboardStore } from "./DashboardStoreContext";
-import { cardClass, ghostBtn, labelClass } from "./styles";
+import { cardClass, ghostBtn, labelClass, primaryBtn } from "./styles";
 
 const TEMPLATES: { id: TemplateId; name: string; desc: string; swatch: string }[] = [
   {
@@ -49,8 +51,74 @@ export function AppearanceTab() {
   const updateContent = (patch: Partial<Invitation["content"]>, key: string) =>
     actions.updateContent(patch, key);
 
+  const [customSlug, setCustomSlug] = useState(invitation.slug);
+  const [slugError, setSlugError] = useState("");
+
+  const handleSaveSlug = async () => {
+    const { valid, slug, error } = validateSlug(customSlug);
+    if (!valid) {
+      setSlugError(error || "Format slug tidak valid");
+      return;
+    }
+    setSlugError("");
+    const res = await actions.updateInvitation({ slug }, "slug");
+    if (!res.success) {
+      const msg = res.error?.includes("unique") || res.error?.includes("duplicate")
+        ? "Slug ini sudah dipakai pasangan lain. Pilih nama slug lain."
+        : res.error || "Gagal mengubah slug";
+      setSlugError(msg);
+      return toast(msg, "error");
+    }
+    setCustomSlug(slug);
+    toast("Tautan undangan berhasil diperbarui!");
+  };
+
   return (
     <div className="space-y-4">
+      {/* Tautan URL Undangan */}
+      <section className={cardClass}>
+        <div className="flex items-center gap-2">
+          <Globe size={16} className="text-sage" />
+          <h2 className="text-sm font-semibold">Tautan Undangan Kamu</h2>
+        </div>
+        <p className="mt-1 text-xs text-ink/45">
+          Tentukan nama unik untuk link undangan pernikahanmu (contoh: andi-siti).
+        </p>
+
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="flex flex-1 items-center rounded-xl border border-ink/10 bg-white px-3 py-1.5 focus-within:border-sage focus-within:ring-2 focus-within:ring-sage/20">
+            <span className="text-xs font-medium text-ink/40 select-none">/u/</span>
+            <input
+              type="text"
+              value={customSlug}
+              onChange={(e) => {
+                setCustomSlug(e.target.value);
+                setSlugError("");
+              }}
+              placeholder="nama-pasangan"
+              className="ml-1 flex-1 bg-transparent text-xs font-semibold text-ink outline-none"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={handleSaveSlug}
+            disabled={savingKey === "slug" || customSlug === invitation.slug}
+            className={`${primaryBtn} min-h-9 px-4 text-xs disabled:opacity-50`}
+          >
+            {savingKey === "slug" ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+            Simpan Tautan
+          </button>
+        </div>
+
+        {slugError ? (
+          <p className="mt-2 text-[11px] font-medium text-rose-500">{slugError}</p>
+        ) : (
+          <p className="mt-2 text-[11px] text-ink/40">
+            Hanya huruf kecil, angka, dan tanda strip.
+          </p>
+        )}
+      </section>
+
       {/* Template */}
       <section className={cardClass}>
         <h2 className="text-sm font-semibold">Desain undangan</h2>

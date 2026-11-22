@@ -27,3 +27,12 @@ Berkas visual (foto sampul, avatar mempelai, galeri foto) dan berkas audio musik
 
 ### Dashboard Store
 Modul penyedia state reaktif dan aksi terpusat untuk antarmuka dashboard pemilik acara. Mengelola sinkronisasi lokal dan mutasi terhadap Data Store secara transparan, termasuk mekanisme transisi dan error rollback.
+
+### Tenant & Account (Pemilik Acara / Akun Pengguna)
+Entitas pengguna terotentikasi yang memiliki hak kelola atas satu entitas undangan pernikahan, daftar tamu, doa, serta kuota berkas media dalam repositori terisolasi.
+
+### Invitation Slug (Tengara Tautan Undangan)
+Pengidentifikasi alfanumerik unik yang menjadi segmen path URL publik (`/u/[slug]`), dapat dipersonalisasi oleh pemilik acara dengan ketentuan tidak bentrok dengan rute sistem terdaftar (*reserved routes*).
+
+### Starter Template Content (Konten Awal Undangan)
+Struktur data awal netral (placeholder generik) yang diinjeksikan saat pembuatan undangan baru agar tampilan pratinjau tetap fungsional tanpa memuat data personal akun lain.

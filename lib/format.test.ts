@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { countdownParts, inviteUrl, normalizePhone, parseGuestLines, waShareUrl } from "./format.ts";
+import { countdownParts, inviteUrl, normalizePhone, parseGuestLines, validateSlug, waShareUrl } from "./format.ts";
 
 test("parseGuestLines menerima tab (Excel) dan koma", () => {
   const rows = parseGuestLines("Budi\tKeluarga\t0812-3456-789\nSari & Partner\n\nbudi");
@@ -33,10 +33,25 @@ test("countdownParts tidak pernah negatif", () => {
   assert.equal(countdownParts(target, new Date(target).getTime() - 86_400_000).days, 1);
 });
 
-test("inviteUrl mengarahkan ke path /undangan dengan query parameter nama tamu", () => {
-  const url = inviteUrl("https://nikah.com", "default", "Budi Santoso");
-  assert.equal(url, "https://nikah.com/undangan?to=Budi%20Santoso");
+test("inviteUrl mengarahkan ke path /u/[slug] atau /undangan jika default dengan query parameter nama tamu", () => {
+  const urlDefault = inviteUrl("https://nikah.com", "default", "Budi Santoso");
+  assert.equal(urlDefault, "https://nikah.com/undangan?to=Budi%20Santoso");
 
-  const urlTanpaTamu = inviteUrl("https://nikah.com", "default");
-  assert.equal(urlTanpaTamu, "https://nikah.com/undangan");
+  const urlDefaultTanpaTamu = inviteUrl("https://nikah.com", "default");
+  assert.equal(urlDefaultTanpaTamu, "https://nikah.com/undangan");
+
+  const urlSlug = inviteUrl("https://nikah.com", "andi-siti", "Budi Santoso");
+  assert.equal(urlSlug, "https://nikah.com/u/andi-siti?to=Budi%20Santoso");
+
+  const urlSlugTanpaTamu = inviteUrl("https://nikah.com", "andi-siti");
+  assert.equal(urlSlugTanpaTamu, "https://nikah.com/u/andi-siti");
+});
+
+test("validateSlug memvalidasi panjang, karakter, dan reserved words", () => {
+  assert.equal(validateSlug("Andi & Siti 2026!").slug, "andi-siti-2026");
+  assert.equal(validateSlug("andi-siti").valid, true);
+  assert.equal(validateSlug("ab").valid, false); // < 3 karakter
+  assert.equal(validateSlug("dashboard").valid, false); // reserved
+  assert.equal(validateSlug("u").valid, false); // reserved
+  assert.equal(validateSlug("undangan").valid, false); // reserved
 });

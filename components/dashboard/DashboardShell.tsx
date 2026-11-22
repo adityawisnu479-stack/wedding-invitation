@@ -4,14 +4,14 @@ import { motion } from "framer-motion";
 import { ExternalLink, HeartHandshake, LayoutDashboard, LogOut, Settings2, Sparkles, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { weddingConfig } from "@/config/wedding.config";
+import { createStarterInvitationContent, weddingConfig } from "@/config/wedding.config";
 import type { DashboardData } from "@/lib/data";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import type { Invitation } from "@/lib/types";
 import { ToastProvider, useToast } from "@/components/ui/Toast";
 import { AppearanceTab } from "./AppearanceTab";
 import { ContentTab } from "./ContentTab";
-import { DashboardProvider } from "./DashboardStoreContext";
+import { DashboardProvider, useDashboardStore } from "./DashboardStoreContext";
 import { GuestsTab } from "./GuestsTab";
 import { OverviewTab } from "./OverviewTab";
 import { cardClass, ghostBtn, primaryBtn } from "./styles";
@@ -42,8 +42,8 @@ export function DashboardShell({ data }: { data: DashboardData }) {
 function DashboardInner({ data }: { data: DashboardData }) {
   const router = useRouter();
   const toast = useToast();
+  const { invitation, actions } = useDashboardStore();
   const [tab, setTab] = useState<TabId>("overview");
-  const [invitation, setInvitation] = useState<Invitation>(data.invitation);
   const [creating, setCreating] = useState(false);
 
   const needsSetup = invitation.id === "local";
@@ -58,14 +58,21 @@ function DashboardInner({ data }: { data: DashboardData }) {
       router.replace("/login");
       return;
     }
+    // Buat slug unik per user agar tidak terjadi duplicate key 409 pada unique constraint
+    const randomSuffix = Math.random().toString(36).substring(2, 7);
+    const slug = `undangan-${user.id.slice(0, 8)}-${randomSuffix}`;
+
     const { data: created, error } = await client
       .from("invitations")
-      .insert({ user_id: user.id, slug: "default", content: weddingConfig })
+      .insert({ user_id: user.id, slug, content: createStarterInvitationContent() })
       .select()
       .single();
     setCreating(false);
     if (error) return toast("Gagal membuat undangan", "error");
-    setInvitation(created as Invitation);
+    
+    // Sinkronkan state store dan refresh data server
+    actions.setInvitationData(created as Invitation);
+    router.refresh();
     toast("Undangan berhasil dibuat");
   };
 
@@ -85,15 +92,26 @@ function DashboardInner({ data }: { data: DashboardData }) {
             <p className="truncate text-sm font-semibold">Dashboard Undangan</p>
             <p className="truncate text-[11px] text-ink/40">{data.email}</p>
           </div>
-          <a
-            href="/"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex size-9 items-center justify-center rounded-lg text-ink/50 transition hover:bg-ink/5 hover:text-ink"
-            title="Lihat undangan"
-          >
-            <ExternalLink size={16} />
-          </a>
+          {needsSetup ? (
+            <button
+              type="button"
+              disabled
+              className="inline-flex size-9 cursor-not-allowed items-center justify-center rounded-lg text-ink/20"
+              title="Buat undangan terlebih dahulu untuk melihat preview"
+            >
+              <ExternalLink size={16} />
+            </button>
+          ) : (
+            <a
+              href={`/u/${encodeURIComponent(invitation.slug)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex size-9 items-center justify-center rounded-lg text-ink/50 transition hover:bg-ink/5 hover:text-ink"
+              title="Lihat undangan saya"
+            >
+              <ExternalLink size={16} />
+            </a>
+          )}
           <button
             type="button"
             onClick={logout}
@@ -156,12 +174,19 @@ function DashboardInner({ data }: { data: DashboardData }) {
           </motion.div>
         )}
 
-        <div className="mt-8 flex items-center justify-between gap-2">
-          <a href="/undangan" target="_blank" rel="noreferrer" className={`${ghostBtn} min-h-10 px-3 text-xs`}>
-            <ExternalLink size={14} /> Buka undangan
-          </a>
-          <p className="text-[11px] text-ink/30">Undangan pernikahan · {new Date().getFullYear()}</p>
-        </div>
+        {!needsSetup ? (
+          <div className="mt-8 flex items-center justify-between gap-2">
+            <a
+              href={`/u/${encodeURIComponent(invitation.slug)}`}
+              target="_blank"
+              rel="noreferrer"
+              className={`${ghostBtn} min-h-10 px-3 text-xs`}
+            >
+              <ExternalLink size={14} /> Buka undangan
+            </a>
+            <p className="text-[11px] text-ink/30">Undangan pernikahan · {new Date().getFullYear()}</p>
+          </div>
+        ) : null}
       </main>
     </div>
   );
