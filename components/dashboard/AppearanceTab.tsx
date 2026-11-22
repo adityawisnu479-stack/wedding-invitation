@@ -19,11 +19,16 @@ import { useDataStore } from "@/lib/store";
 import type { PhotoFolder, TrackItem } from "@/lib/store/types";
 import type { Invitation, TemplateId } from "@/lib/types";
 import { useToast } from "@/components/ui/Toast";
-import { validateSlug } from "@/lib/format";
+import { previewTemplateUrl, validateSlug } from "@/lib/format";
 import { useDashboardStore } from "./DashboardStoreContext";
 import { cardClass, ghostBtn, labelClass, primaryBtn } from "./styles";
 
-const TEMPLATES: { id: TemplateId; name: string; desc: string; swatch: string }[] = [
+const TEMPLATES: {
+  id: TemplateId;
+  name: string;
+  desc: string;
+  swatch: string;
+}[] = [
   {
     id: "modern-minimalist",
     name: "Modern Minimalist",
@@ -44,7 +49,8 @@ export function AppearanceTab() {
 
   const update = async (patch: Partial<Invitation>, key: string) => {
     const res = await actions.updateInvitation(patch, key);
-    if (!res.success) return toast(res.error || "Gagal menyimpan perubahan", "error");
+    if (!res.success)
+      return toast(res.error || "Gagal menyimpan perubahan", "error");
     toast("Perubahan disimpan");
   };
 
@@ -63,9 +69,10 @@ export function AppearanceTab() {
     setSlugError("");
     const res = await actions.updateInvitation({ slug }, "slug");
     if (!res.success) {
-      const msg = res.error?.includes("unique") || res.error?.includes("duplicate")
-        ? "Slug ini sudah dipakai pasangan lain. Pilih nama slug lain."
-        : res.error || "Gagal mengubah slug";
+      const msg =
+        res.error?.includes("unique") || res.error?.includes("duplicate")
+          ? "Slug ini sudah dipakai pasangan lain. Pilih nama slug lain."
+          : res.error || "Gagal mengubah slug";
       setSlugError(msg);
       return toast(msg, "error");
     }
@@ -82,12 +89,15 @@ export function AppearanceTab() {
           <h2 className="text-sm font-semibold">Tautan Undangan Kamu</h2>
         </div>
         <p className="mt-1 text-xs text-ink/45">
-          Tentukan nama unik untuk link undangan pernikahanmu (contoh: andi-siti).
+          Tentukan nama unik untuk link undangan pernikahanmu (contoh:
+          andi-siti).
         </p>
 
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
           <div className="flex flex-1 items-center rounded-xl border border-ink/10 bg-white px-3 py-1.5 focus-within:border-sage focus-within:ring-2 focus-within:ring-sage/20">
-            <span className="text-xs font-medium text-ink/40 select-none">/u/</span>
+            <span className="text-xs font-medium text-ink/40 select-none">
+              /u/
+            </span>
             <input
               type="text"
               value={customSlug}
@@ -105,13 +115,19 @@ export function AppearanceTab() {
             disabled={savingKey === "slug" || customSlug === invitation.slug}
             className={`${primaryBtn} min-h-9 px-4 text-xs disabled:opacity-50`}
           >
-            {savingKey === "slug" ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+            {savingKey === "slug" ? (
+              <Loader2 size={13} className="animate-spin" />
+            ) : (
+              <Sparkles size={13} />
+            )}
             Simpan Tautan
           </button>
         </div>
 
         {slugError ? (
-          <p className="mt-2 text-[11px] font-medium text-rose-500">{slugError}</p>
+          <p className="mt-2 text-[11px] font-medium text-rose-500">
+            {slugError}
+          </p>
         ) : (
           <p className="mt-2 text-[11px] text-ink/40">
             Hanya huruf kecil, angka, dan tanda strip.
@@ -122,7 +138,9 @@ export function AppearanceTab() {
       {/* Template */}
       <section className={cardClass}>
         <h2 className="text-sm font-semibold">Desain undangan</h2>
-        <p className="mt-1 text-xs text-ink/45">Pilih tampilan yang dipakai tamu saat membuka link.</p>
+        <p className="mt-1 text-xs text-ink/45">
+          Pilih tampilan yang dipakai tamu saat membuka link.
+        </p>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {TEMPLATES.map((template) => {
@@ -144,10 +162,12 @@ export function AppearanceTab() {
                       </span>
                     ) : null}
                   </div>
-                  <p className="mt-1 text-xs leading-relaxed text-ink/50">{template.desc}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-ink/50">
+                    {template.desc}
+                  </p>
                   <div className="mt-3 flex gap-2">
                     <a
-                      href={`/undangan?preview_template=${template.id}&to=Preview`}
+                      href={previewTemplateUrl(invitation.slug, template.id)}
                       target="_blank"
                       rel="noreferrer"
                       className={`${ghostBtn} min-h-9 flex-1 px-2 text-xs`}
@@ -157,11 +177,17 @@ export function AppearanceTab() {
                     {!active ? (
                       <button
                         type="button"
-                        onClick={() => update({ active_template: template.id }, "template")}
+                        onClick={() =>
+                          update({ active_template: template.id }, "template")
+                        }
                         disabled={savingKey === "template"}
                         className={`${ghostBtn} min-h-9 flex-1 px-2 text-xs`}
                       >
-                        {savingKey === "template" ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+                        {savingKey === "template" ? (
+                          <Loader2 size={13} className="animate-spin" />
+                        ) : (
+                          <Sparkles size={13} />
+                        )}
                         Pakai
                       </button>
                     ) : null}
@@ -176,7 +202,9 @@ export function AppearanceTab() {
       {/* Section toggles */}
       <section className={cardClass}>
         <h2 className="text-sm font-semibold">Bagian undangan</h2>
-        <p className="mt-1 text-xs text-ink/45">Matikan bagian yang tidak ingin ditampilkan.</p>
+        <p className="mt-1 text-xs text-ink/45">
+          Matikan bagian yang tidak ingin ditampilkan.
+        </p>
         <div className="mt-2 divide-y divide-ink/5">
           <Toggle
             label="Love story"
@@ -207,7 +235,9 @@ export function AppearanceTab() {
       {/* Photos */}
       <section className={cardClass}>
         <h2 className="text-sm font-semibold">Foto</h2>
-        <p className="mt-1 text-xs text-ink/45">Upload ke Supabase Storage. Format JPG/PNG, maksimal ~5 MB.</p>
+        <p className="mt-1 text-xs text-ink/45">
+          Upload ke Supabase Storage. Format JPG/PNG, maksimal ~5 MB.
+        </p>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <PhotoUploader
@@ -215,7 +245,10 @@ export function AppearanceTab() {
             folder="cover"
             value={invitation.content.photos.cover}
             onUploaded={(url) =>
-              updateContent({ photos: { ...invitation.content.photos, cover: url } }, "photo-cover")
+              updateContent(
+                { photos: { ...invitation.content.photos, cover: url } },
+                "photo-cover"
+              )
             }
           />
           <PhotoUploader
@@ -223,7 +256,10 @@ export function AppearanceTab() {
             folder="groom"
             value={invitation.content.photos.groom}
             onUploaded={(url) =>
-              updateContent({ photos: { ...invitation.content.photos, groom: url } }, "photo-groom")
+              updateContent(
+                { photos: { ...invitation.content.photos, groom: url } },
+                "photo-groom"
+              )
             }
           />
           <PhotoUploader
@@ -231,7 +267,10 @@ export function AppearanceTab() {
             folder="bride"
             value={invitation.content.photos.bride}
             onUploaded={(url) =>
-              updateContent({ photos: { ...invitation.content.photos, bride: url } }, "photo-bride")
+              updateContent(
+                { photos: { ...invitation.content.photos, bride: url } },
+                "photo-bride"
+              )
             }
           />
         </div>
@@ -325,14 +364,21 @@ function MusicPicker() {
       return;
     }
     audio.src = url;
-    audio.play().then(() => setPreviewing(url)).catch(() => toast("Lagu tidak bisa diputar", "error"));
+    audio
+      .play()
+      .then(() => setPreviewing(url))
+      .catch(() => toast("Lagu tidak bisa diputar", "error"));
   };
 
   const use = async (url: string) => {
     setSaving(true);
-    const res = await actions.updateInvitation({ active_music_url: url }, "music");
+    const res = await actions.updateInvitation(
+      { active_music_url: url },
+      "music"
+    );
     setSaving(false);
-    if (!res.success) return toast(res.error || "Gagal menyimpan lagu", "error");
+    if (!res.success)
+      return toast(res.error || "Gagal menyimpan lagu", "error");
     toast("Musik latar diperbarui");
   };
 
@@ -340,7 +386,8 @@ function MusicPicker() {
     setUploading(true);
     const res = await store.media.uploadTrack(file);
     setUploading(false);
-    if (res.error) return toast(res.error.message || "Gagal mengunggah musik", "error");
+    if (res.error)
+      return toast(res.error.message || "Gagal mengunggah musik", "error");
     toast("Musik terunggah");
     await reload();
   };
@@ -350,7 +397,9 @@ function MusicPicker() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold">Musik latar</h2>
-          <p className="mt-1 text-xs text-ink/45">Pilih lagu bawaan, atau unggah lagu baru (mp3).</p>
+          <p className="mt-1 text-xs text-ink/45">
+            Pilih lagu bawaan, atau unggah lagu baru (mp3).
+          </p>
         </div>
         <button
           type="button"
@@ -358,7 +407,11 @@ function MusicPicker() {
           disabled={uploading}
           className={`${ghostBtn} min-h-9 px-3 text-xs`}
         >
-          {uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+          {uploading ? (
+            <Loader2 size={13} className="animate-spin" />
+          ) : (
+            <Upload size={13} />
+          )}
           Upload mp3
         </button>
         <input
@@ -373,7 +426,11 @@ function MusicPicker() {
           }}
         />
       </div>
-      <audio ref={audioRef} onEnded={() => setPreviewing(null)} className="hidden" />
+      <audio
+        ref={audioRef}
+        onEnded={() => setPreviewing(null)}
+        className="hidden"
+      />
 
       {loading ? (
         <div className="mt-4 space-y-2">
@@ -384,8 +441,12 @@ function MusicPicker() {
       ) : tracks.length === 0 ? (
         <div className="mt-4 rounded-xl border border-dashed border-ink/15 py-8 text-center">
           <Music2 className="mx-auto text-ink/25" size={26} />
-          <p className="mt-2 text-sm text-ink/50">Belum ada musik di storage.</p>
-          <p className="text-xs text-ink/35">Upload mp3 pertama, atau pakai script bawaan untuk lagu default.</p>
+          <p className="mt-2 text-sm text-ink/50">
+            Belum ada musik di storage.
+          </p>
+          <p className="text-xs text-ink/35">
+            Upload mp3 pertama, atau pakai script bawaan untuk lagu default.
+          </p>
         </div>
       ) : (
         <ul className="mt-4 space-y-1.5">
@@ -395,7 +456,9 @@ function MusicPicker() {
               <li
                 key={track.url}
                 className={`flex items-center gap-2 rounded-xl border px-2 py-1.5 ${
-                  active ? "border-sage/40 bg-sage/5" : "border-transparent hover:bg-ink/[0.03]"
+                  active
+                    ? "border-sage/40 bg-sage/5"
+                    : "border-transparent hover:bg-ink/[0.03]"
                 }`}
               >
                 <button
@@ -404,7 +467,11 @@ function MusicPicker() {
                   className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-ink/5 text-ink/70 transition active:scale-95"
                   aria-label={previewing === track.url ? "Jeda" : "Dengarkan"}
                 >
-                  {previewing === track.url ? <Pause size={14} /> : <Play size={14} />}
+                  {previewing === track.url ? (
+                    <Pause size={14} />
+                  ) : (
+                    <Play size={14} />
+                  )}
                 </button>
                 <p className="min-w-0 flex-1 truncate text-sm">{track.name}</p>
                 {active ? (
@@ -450,7 +517,8 @@ function PhotoUploader({
     setUploading(true);
     const res = await store.media.uploadPhoto(folder, file);
     setUploading(false);
-    if (res.error || !res.data) return toast(res.error?.message || "Gagal mengunggah foto", "error");
+    if (res.error || !res.data)
+      return toast(res.error?.message || "Gagal mengunggah foto", "error");
     onUploaded(res.data);
     toast(`${label} diperbarui`);
   };
@@ -473,8 +541,14 @@ function PhotoUploader({
           </>
         ) : (
           <span className="flex flex-col items-center gap-1 text-ink/40">
-            {uploading ? <Loader2 size={18} className="animate-spin" /> : <ImagePlus size={20} />}
-            <span className="text-xs">{uploading ? "Mengunggah..." : "Pilih foto"}</span>
+            {uploading ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <ImagePlus size={20} />
+            )}
+            <span className="text-xs">
+              {uploading ? "Mengunggah..." : "Pilih foto"}
+            </span>
           </span>
         )}
       </button>
@@ -493,7 +567,13 @@ function PhotoUploader({
   );
 }
 
-function GalleryUploader({ photos, onChange }: { photos: string[]; onChange: (photos: string[]) => void }) {
+function GalleryUploader({
+  photos,
+  onChange,
+}: {
+  photos: string[];
+  onChange: (photos: string[]) => void;
+}) {
   const toast = useToast();
   const store = useDataStore();
   const [uploading, setUploading] = useState(false);
@@ -524,7 +604,11 @@ function GalleryUploader({ photos, onChange }: { photos: string[]; onChange: (ph
           disabled={uploading}
           className={`${ghostBtn} min-h-9 px-3 text-xs`}
         >
-          {uploading ? <Loader2 size={13} className="animate-spin" /> : <ImagePlus size={13} />}
+          {uploading ? (
+            <Loader2 size={13} className="animate-spin" />
+          ) : (
+            <ImagePlus size={13} />
+          )}
           Tambah foto
         </button>
         <input
@@ -557,10 +641,16 @@ function GalleryUploader({ photos, onChange }: { photos: string[]; onChange: (ph
                 className="group relative aspect-square overflow-hidden rounded-lg"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={photo} alt="Foto galeri" className="size-full object-cover" />
+                <img
+                  src={photo}
+                  alt="Foto galeri"
+                  className="size-full object-cover"
+                />
                 <button
                   type="button"
-                  onClick={() => onChange(photos.filter((item) => item !== photo))}
+                  onClick={() =>
+                    onChange(photos.filter((item) => item !== photo))
+                  }
                   className="absolute right-1 top-1 rounded-md bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100"
                   aria-label="Hapus foto"
                 >

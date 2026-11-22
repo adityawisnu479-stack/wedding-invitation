@@ -1,9 +1,19 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { countdownParts, inviteUrl, normalizePhone, parseGuestLines, validateSlug, waShareUrl } from "./format.ts";
+import {
+  countdownParts,
+  inviteUrl,
+  normalizePhone,
+  parseGuestLines,
+  previewTemplateUrl,
+  validateSlug,
+  waShareUrl,
+} from "./format.ts";
 
 test("parseGuestLines menerima tab (Excel) dan koma", () => {
-  const rows = parseGuestLines("Budi\tKeluarga\t0812-3456-789\nSari & Partner\n\nbudi");
+  const rows = parseGuestLines(
+    "Budi\tKeluarga\t0812-3456-789\nSari & Partner\n\nbudi"
+  );
   assert.deepEqual(rows, [
     { name: "Budi", category: "Keluarga", phone: "628123456789" },
     { name: "Sari & Partner", category: "Reguler", phone: null },
@@ -17,7 +27,10 @@ test("normalizePhone menyeragamkan format Indonesia", () => {
 });
 
 test("waShareUrl memakai wa.me untuk nomor, atau tanpa nomor", () => {
-  assert.match(waShareUrl("628123456789", "hai"), /^https:\/\/wa\.me\/628123456789\?text=hai/);
+  assert.match(
+    waShareUrl("628123456789", "hai"),
+    /^https:\/\/wa\.me\/628123456789\?text=hai/
+  );
   assert.match(waShareUrl(null, "hai"), /^https:\/\/wa\.me\/\?text=hai/);
 });
 
@@ -30,7 +43,10 @@ test("countdownParts tidak pernah negatif", () => {
     seconds: 0,
     done: true,
   });
-  assert.equal(countdownParts(target, new Date(target).getTime() - 86_400_000).days, 1);
+  assert.equal(
+    countdownParts(target, new Date(target).getTime() - 86_400_000).days,
+    1
+  );
 });
 
 test("inviteUrl mengarahkan ke path /u/[slug] atau /undangan jika default dengan query parameter nama tamu", () => {
@@ -54,4 +70,19 @@ test("validateSlug memvalidasi panjang, karakter, dan reserved words", () => {
   assert.equal(validateSlug("dashboard").valid, false); // reserved
   assert.equal(validateSlug("u").valid, false); // reserved
   assert.equal(validateSlug("undangan").valid, false); // reserved
+});
+
+test("previewTemplateUrl mengarahkan ke slug tenant atau ke /undangan jika default", () => {
+  assert.equal(
+    previewTemplateUrl("andi-siti", "classic-luxury"),
+    "/u/andi-siti?preview_template=classic-luxury&to=Preview"
+  );
+  assert.equal(
+    previewTemplateUrl("default", "modern-minimalist"),
+    "/undangan?preview_template=modern-minimalist&to=Preview"
+  );
+  assert.equal(
+    previewTemplateUrl("", "classic-luxury"),
+    "/undangan?preview_template=classic-luxury&to=Preview"
+  );
 });

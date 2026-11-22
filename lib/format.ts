@@ -1,4 +1,8 @@
-export type GuestInput = { name: string; category: string; phone: string | null };
+export type GuestInput = {
+  name: string;
+  category: string;
+  phone: string | null;
+};
 
 /** Parse paste massal dari Excel (tab) atau ketikan manual (koma). Satu baris satu tamu. */
 export function parseGuestLines(text: string): GuestInput[] {
@@ -11,14 +15,20 @@ export function parseGuestLines(text: string): GuestInput[] {
   const result: GuestInput[] = [];
 
   for (const row of rows) {
-    const cols = (row.includes("\t") ? row.split("\t") : row.split(",")).map((c) => c.trim());
+    const cols = (row.includes("\t") ? row.split("\t") : row.split(",")).map(
+      (c) => c.trim()
+    );
     const name = cols[0];
     if (!name || seen.has(name.toLowerCase())) continue;
     seen.add(name.toLowerCase());
 
     const category = cols.length >= 3 && cols[1] ? cols[1] : "Reguler";
     const phone = (cols.length >= 3 ? cols[2] : cols[1]) || null;
-    result.push({ name, category, phone: phone ? normalizePhone(phone) : null });
+    result.push({
+      name,
+      category,
+      phone: phone ? normalizePhone(phone) : null,
+    });
   }
 
   return result;
@@ -34,7 +44,9 @@ export function normalizePhone(phone: string): string {
 
 export function waShareUrl(phone: string | null, message: string): string {
   const text = encodeURIComponent(message);
-  return phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}`;
+  return phone
+    ? `https://wa.me/${phone}?text=${text}`
+    : `https://wa.me/?text=${text}`;
 }
 
 export const RESERVED_SLUGS = new Set([
@@ -51,7 +63,11 @@ export const RESERVED_SLUGS = new Set([
   "default",
 ]);
 
-export function validateSlug(raw: string): { valid: boolean; slug: string; error?: string } {
+export function validateSlug(raw: string): {
+  valid: boolean;
+  slug: string;
+  error?: string;
+} {
   const slug = raw
     .trim()
     .toLowerCase()
@@ -69,18 +85,40 @@ export function validateSlug(raw: string): { valid: boolean; slug: string; error
     return { valid: false, slug, error: "Slug maksimal 50 karakter." };
   }
   if (RESERVED_SLUGS.has(slug)) {
-    return { valid: false, slug, error: `Kata '${slug}' tidak dapat digunakan sebagai slug.` };
+    return {
+      valid: false,
+      slug,
+      error: `Kata '${slug}' tidak dapat digunakan sebagai slug.`,
+    };
   }
 
   return { valid: true, slug };
 }
 
-export function inviteUrl(origin: string, slug: string, guestName?: string): string {
-  const base = slug && slug !== "default" ? `${origin}/u/${encodeURIComponent(slug)}` : `${origin}/undangan`;
+export function inviteUrl(
+  origin: string,
+  slug: string,
+  guestName?: string
+): string {
+  const base =
+    slug && slug !== "default"
+      ? `${origin}/u/${encodeURIComponent(slug)}`
+      : `${origin}/undangan`;
   return guestName ? `${base}?to=${encodeURIComponent(guestName)}` : base;
 }
 
-export function messageForGuest(template: string, guest: string, url: string): string {
+export function previewTemplateUrl(slug: string, templateId: string): string {
+  if (!slug || slug === "default") {
+    return `/undangan?preview_template=${encodeURIComponent(templateId)}&to=Preview`;
+  }
+  return `/u/${encodeURIComponent(slug)}?preview_template=${encodeURIComponent(templateId)}&to=Preview`;
+}
+
+export function messageForGuest(
+  template: string,
+  guest: string,
+  url: string
+): string {
   return template.replaceAll("{guest}", guest).replaceAll("{url}", url);
 }
 

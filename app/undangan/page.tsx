@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Invitation } from "@/components/invitation/Invitation";
-import { localInvitation, resolvePublicInvitation } from "@/lib/data";
+import { localInvitation } from "@/lib/data";
+import type { Wish } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -12,8 +13,7 @@ export async function generateMetadata({
   searchParams: Promise<Search>;
 }): Promise<Metadata> {
   const params = await searchParams;
-  const res = await resolvePublicInvitation();
-  const invitation = res.status === "found" ? res.invitation : localInvitation;
+  const invitation = localInvitation;
   const { groom, bride } = invitation.content;
   const guest = typeof params.to === "string" ? params.to : undefined;
 
@@ -31,9 +31,10 @@ export default async function UndanganPage({
   searchParams: Promise<Search>;
 }) {
   const params = await searchParams;
-  const res = await resolvePublicInvitation();
-  const invitation = res.status === "found" ? res.invitation : localInvitation;
-  const wishes = res.status === "found" ? res.wishes : [];
+  // Rute /undangan didelegasikan murni sebagai showcase contoh/demo publik netral.
+  // Tidak mengambil data pribadi akun pengguna manapun dari database.
+  const invitation = localInvitation;
+  const wishes: Wish[] = [];
 
   return (
     <Invitation
