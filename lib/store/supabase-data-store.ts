@@ -1,6 +1,11 @@
 import { supabaseBrowser, supabaseConfigured } from "../supabase/client";
 import type { Guest, Invitation, Wish } from "../types";
-import type { DataStore, NewGuestInput, StoreResult, WishInput } from "./types";
+import type { DataStore, NewGuestInput, PhotoFolder, StoreResult, TrackItem, WishInput } from "./types";
+
+function buildStoragePath(folder: string, fileName: string): string {
+  const safeName = fileName.replace(/[^\w.-]+/g, "-");
+  return `${folder}/${Date.now()}-${safeName}`;
+}
 
 export class SupabaseDataStore implements DataStore {
   wishes = {
@@ -35,6 +40,34 @@ export class SupabaseDataStore implements DataStore {
           return { data: null, error: new Error(error.message || "Gagal mengirim ucapan") };
         }
         return { data: data as Wish, error: null };
+      } catch (err: any) {
+        return { data: null, error: err instanceof Error ? err : new Error(String(err)) };
+      }
+    },
+
+    toggleHidden: async (id: string, current: boolean): Promise<StoreResult<void>> => {
+      try {
+        const { error } = await supabaseBrowser()
+          .from("rsvps_and_wishes")
+          .update({ is_hidden: !current })
+          .eq("id", id);
+
+        if (error) {
+          return { data: null, error: new Error(error.message || "Gagal memperbarui status ucapan") };
+        }
+        return { data: null, error: null };
+      } catch (err: any) {
+        return { data: null, error: err instanceof Error ? err : new Error(String(err)) };
+      }
+    },
+
+    remove: async (id: string): Promise<StoreResult<void>> => {
+      try {
+        const { error } = await supabaseBrowser().from("rsvps_and_wishes").delete().eq("id", id);
+        if (error) {
+          return { data: null, error: new Error(error.message || "Gagal menghapus ucapan") };
+        }
+        return { data: null, error: null };
       } catch (err: any) {
         return { data: null, error: err instanceof Error ? err : new Error(String(err)) };
       }
@@ -102,6 +135,105 @@ export class SupabaseDataStore implements DataStore {
           return { data: null, error: new Error(error.message || "Gagal menyimpan perubahan") };
         }
         return { data: null, error: null };
+      } catch (err: any) {
+        return { data: null, error: err instanceof Error ? err : new Error(String(err)) };
+      }
+    },
+  };
+
+  media = {
+    listTracks: async (): Promise<StoreResult<TrackItem[]>> => {
+      try {
+        const client = supabaseBrowser();
+        const [defaults, custom] = await Promise.all([
+          client.storage.from("wedding-music").list("defaults", { limit: 100 }),
+          client.storage.from("wedding-music").list("custom", { limit: 100 }),
+        ]);
+
+        const rows = [
+          ...(defaults.data ?? []).map((file: { name: string }) => ({ name: file.name, path: `defaults/${file.name}` })),
+          ...(custom.data ?? []).map((file: { name: string }) => ({ name: file.name, path: `custom/${file.name}` })),
+        ].filter((row) => /\.mp3$/i.test(row.name));
+
+        const tracks: TrackItem[] = rows.map((row) => ({
+          name: row.name.replace(/\.mp3$/i, "").replace(/^\d+-/, ""),
+          url: client.storage.from("wedding-music").getPublicUrl(row.path).data.publicUrl,
+        }));
+
+        return { data: tracks, error: null };
+      } catch (err: any) {
+        return { data: null, error: err instanceof Error ? err : new Error(String(err)) };
+      }
+    },
+
+    uploadTrack: async (file: File): Promise<StoreResult<TrackItem>> => {
+      if (!/\.mp3$/i.test(file.name)) {
+        return { data: null, error: new Error("Format musik harus .mp3") };
+      }
+
+      try {
+        const client = supabaseBrowser();
+        const path = buildStoragePath("custom", file.name);
+        const { error } = await client.storage
+          .from("wedding-music")
+          .upload(path, file, { contentType: "audio/mpeg" });
+
+        if (error) {
+          return { data: null, error: new Error(error.message || "Gagal mengunggah musik") };
+        }
+
+        const publicUrl = client.storage.from("wedding-music").getPublicUrl(path).data.publicUrl;
+        const cleanName = file.name.replace(/\.mp3$/i, "").replace(/^\d+-/, "");
+
+        return {
+          data: { name: cleanName, url: publicUrl },
+          error: null,
+        };
+      } catch (err: any) {
+        return { data: null, error: err instanceof Error ? err : new Error(String(err)) };
+      }
+    },
+
+    uploadPhoto: async (folder: PhotoFolder, file: File): Promise<StoreResult<string>> => {
+      try {
+        const client = supabaseBrowser();
+        const path = buildStoragePath(folder, file.name);
+        const { error } = await client.storage.from("wedding-photos").upload(path, file, { upsert: true });
+
+        if (error) {
+          return { data: null, error: new Error(error.message || "Gagal mengunggah foto") };
+        }
+
+        const publicUrl = client.storage.from("wedding-photos").getPublicUrl(path).data.publicUrl;
+        return { data: publicUrl, error: null };
+      } catch (err: any) {
+        return { data: null, error: err instanceof Error ? err : new Error(String(err)) };
+      }
+    },
+
+    uploadPhotos: async (folder: "gallery", files: File[]): Promise<StoreResult<string[]>> => {
+      if (files.length === 0) {
+        return { data: [], error: null };
+      }
+
+      try {
+        const urls: string[] = [];
+        const errors: string[] = [];
+
+        for (const file of files) {
+          const res = await this.media.uploadPhoto(folder, file);
+          if (res.data) {
+            urls.push(res.data);
+          } else if (res.error) {
+            errors.push(`${file.name}: ${res.error.message}`);
+          }
+        }
+
+        if (urls.length === 0 && errors.length > 0) {
+          return { data: null, error: new Error(`Gagal mengunggah foto: ${errors.join("; ")}`) };
+        }
+
+        return { data: urls, error: null };
       } catch (err: any) {
         return { data: null, error: err instanceof Error ? err : new Error(String(err)) };
       }

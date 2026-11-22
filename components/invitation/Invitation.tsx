@@ -48,7 +48,7 @@ export function Invitation({
           <CoverGate
             key="cover"
             content={invitation.content}
-            template={templateId}
+            theme={activeTheme}
             guestName={guestName}
             onOpen={() => setOpened(true)}
           />

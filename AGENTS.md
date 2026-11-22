@@ -15,3 +15,5 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Technical Specifications**: [docs/specs/](docs/specs/)
 - **Wayfinder Maps & Issues**: [.wayfinder/](.wayfinder/) and [.scratch/](.scratch/)
 - **Database Schema & SQL Helpers**: [supabase/schema.sql](supabase/schema.sql) and [supabase/update-content.sql](supabase/update-content.sql)
+- **Data & UI Boundary Rule**: UI components in `components/` MUST use `useDashboardStore()` or `useDataStore()`. Direct imports of `@/lib/supabase/client` in `components/` are banned (enforced by ESLint).
+- **Template Engine Architecture**: Presentation is rendered via `WeddingTemplateEngine` + `TemplateTheme` ([components/invitation/template-engine/](components/invitation/template-engine/)). Obsolete template files (`ModernTemplate.tsx`, `LuxuryTemplate.tsx`) have been deleted.

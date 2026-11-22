@@ -44,8 +44,6 @@ function DashboardInner({ data }: { data: DashboardData }) {
   const toast = useToast();
   const [tab, setTab] = useState<TabId>("overview");
   const [invitation, setInvitation] = useState<Invitation>(data.invitation);
-  const [guests, setGuests] = useState(data.guests);
-  const [wishes, setWishes] = useState(data.wishes);
   const [creating, setCreating] = useState(false);
 
   const needsSetup = invitation.id === "local";
@@ -146,9 +144,7 @@ function DashboardInner({ data }: { data: DashboardData }) {
           </div>
         ) : (
           <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-            {tab === "overview" ? (
-              <OverviewTab guests={guests} wishes={wishes} setWishes={setWishes} />
-            ) : null}
+            {tab === "overview" ? <OverviewTab /> : null}
             {tab === "content" ? <ContentTab /> : null}
             {tab === "guests" ? (
               <GuestsTab

@@ -2,12 +2,10 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Copy, Loader2, MessageCircle, Plus, Search, Trash2, Upload, UserPlus, X } from "lucide-react";
-import { useMemo, useState } from "react";
 import { inviteUrl, messageForGuest, parseGuestLines, waShareUrl } from "@/lib/format";
-import type { Guest } from "@/lib/types";
-import { useToast } from "@/components/ui/Toast";
 import { useDashboardStore } from "./DashboardStoreContext";
 import { cardClass, iconBtn, inputClass, labelClass, primaryBtn } from "./styles";
+import { useGuestManagement } from "./useGuestManagement";
 
 export function GuestsTab({
   waMessage,
@@ -16,75 +14,18 @@ export function GuestsTab({
   waMessage: string;
   slug: string;
 }) {
-  const toast = useToast();
-  const { guests, actions } = useDashboardStore();
-  const [name, setName] = useState("");
-  const [category, setCategory] = useState("Reguler");
-  const [phone, setPhone] = useState("");
-  const [bulk, setBulk] = useState("");
-  const [showBulk, setShowBulk] = useState(false);
-  const [query, setQuery] = useState("");
-  const [pending, setPending] = useState(false);
+  const { guests } = useDashboardStore();
+  const {
+    query,
+    setQuery,
+    filteredGuests,
+    pending,
+    form,
+    bulk,
+    actions,
+  } = useGuestManagement({ slug });
 
   const origin = typeof window === "undefined" ? "" : window.location.origin;
-
-  const filtered = useMemo(() => {
-    const term = query.trim().toLowerCase();
-    if (!term) return guests;
-    return guests.filter(
-      (guest) =>
-        guest.name.toLowerCase().includes(term) ||
-        guest.category.toLowerCase().includes(term) ||
-        (guest.phone ?? "").includes(term),
-    );
-  }, [guests, query]);
-
-  const insert = async (rows: { name: string; category: string; phone: string | null }[]) => {
-    if (rows.length === 0) return toast("Tidak ada nama yang bisa ditambahkan", "error");
-
-    setPending(true);
-    const res = await actions.addGuests(rows);
-    setPending(false);
-
-    if (!res.success) return toast(res.error || "Gagal menambah tamu", "error");
-    toast(`${rows.length} tamu ditambahkan`);
-  };
-
-  const addSingle = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (name.trim().length < 2) return toast("Nama tamu minimal 2 karakter", "error");
-    await insert([{ name: name.trim(), category: category.trim() || "Reguler", phone: phone.trim() || null }]);
-    setName("");
-    setPhone("");
-  };
-
-  const addBulk = async () => {
-    const rows = parseGuestLines(bulk);
-    await insert(rows);
-    setBulk("");
-    setShowBulk(false);
-  };
-
-  const copyLink = async (guest: Guest) => {
-    try {
-      await navigator.clipboard.writeText(inviteUrl(origin, slug, guest.name));
-      toast(`Link ${guest.name} disalin`);
-    } catch {
-      toast("Gagal menyalin link", "error");
-    }
-  };
-
-  const markSent = async (guest: Guest) => {
-    const res = await actions.toggleGuestSent(guest);
-    if (!res.success) return toast(res.error || "Gagal memperbarui status", "error");
-  };
-
-  const remove = async (guest: Guest) => {
-    if (!window.confirm(`Hapus ${guest.name} dari daftar tamu?`)) return;
-    const res = await actions.removeGuest(guest);
-    if (!res.success) return toast(res.error || "Gagal menghapus tamu", "error");
-    toast("Tamu dihapus");
-  };
 
   return (
     <div className="space-y-4">
@@ -93,16 +34,16 @@ export function GuestsTab({
           <h2 className="text-sm font-semibold">Tambah tamu</h2>
           <button
             type="button"
-            onClick={() => setShowBulk((value) => !value)}
+            onClick={() => bulk.setIsOpen(!bulk.isOpen)}
             className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-medium text-sage transition hover:bg-sage/10"
           >
-            {showBulk ? <X size={14} /> : <Upload size={14} />}
-            {showBulk ? "Tutup" : "Tempel massal"}
+            {bulk.isOpen ? <X size={14} /> : <Upload size={14} />}
+            {bulk.isOpen ? "Tutup" : "Tempel massal"}
           </button>
         </div>
 
         <AnimatePresence initial={false}>
-          {showBulk ? (
+          {bulk.isOpen ? (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
@@ -111,28 +52,28 @@ export function GuestsTab({
             >
               <div className="mt-3 space-y-2">
                 <textarea
-                  value={bulk}
-                  onChange={(event) => setBulk(event.target.value)}
+                  value={bulk.text}
+                  onChange={(event) => bulk.setText(event.target.value)}
                   rows={5}
                   placeholder={"Satu tamu per baris. Contoh:\nBudi Santoso\nSari, 08123456789\nAndi\tKantor\t08129876543"}
                   className={`${inputClass} resize-none py-2.5 font-mono text-xs`}
                 />
-                <button type="button" onClick={addBulk} disabled={pending} className={primaryBtn}>
+                <button type="button" onClick={bulk.submit} disabled={pending} className={primaryBtn}>
                   {pending ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-                  Tambah {parseGuestLines(bulk).length || ""} tamu
+                  Tambah {parseGuestLines(bulk.text).length || ""} tamu
                 </button>
               </div>
             </motion.div>
           ) : null}
         </AnimatePresence>
 
-        <form onSubmit={addSingle} className="mt-4 space-y-3">
+        <form onSubmit={form.submit} className="mt-4 space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block">
               <span className={labelClass}>Nama tamu</span>
               <input
-                value={name}
-                onChange={(event) => setName(event.target.value)}
+                value={form.name}
+                onChange={(event) => form.setName(event.target.value)}
                 placeholder="Budi & Partner"
                 className={inputClass}
               />
@@ -140,8 +81,8 @@ export function GuestsTab({
             <label className="block">
               <span className={labelClass}>Nomor WhatsApp (opsional)</span>
               <input
-                value={phone}
-                onChange={(event) => setPhone(event.target.value)}
+                value={form.phone}
+                onChange={(event) => form.setPhone(event.target.value)}
                 inputMode="tel"
                 placeholder="08123456789"
                 className={inputClass}
@@ -151,8 +92,8 @@ export function GuestsTab({
           <label className="block">
             <span className={labelClass}>Kategori</span>
             <input
-              value={category}
-              onChange={(event) => setCategory(event.target.value)}
+              value={form.category}
+              onChange={(event) => form.setCategory(event.target.value)}
               list="kategori-tamu"
               className={inputClass}
             />
@@ -183,7 +124,7 @@ export function GuestsTab({
           </div>
         </div>
 
-        {filtered.length === 0 ? (
+        {filteredGuests.length === 0 ? (
           <div className="py-14 text-center">
             <UserPlus className="mx-auto text-ink/20" size={30} />
             <p className="mt-3 text-sm text-ink/50">
@@ -193,7 +134,7 @@ export function GuestsTab({
         ) : (
           <ul className="mt-3 divide-y divide-ink/5">
             <AnimatePresence initial={false}>
-              {filtered.map((guest) => (
+              {filteredGuests.map((guest) => (
                 <motion.li
                   key={guest.id}
                   layout
@@ -217,7 +158,7 @@ export function GuestsTab({
                     {guest.phone ? <p className="text-xs text-ink/40">+{guest.phone}</p> : null}
                   </div>
                   <div className="flex shrink-0 items-center gap-0.5">
-                    <button type="button" className={iconBtn} onClick={() => copyLink(guest)} title="Salin link">
+                    <button type="button" className={iconBtn} onClick={() => actions.copyLink(guest)} title="Salin link">
                       <Copy size={15} />
                     </button>
                     <a
@@ -225,7 +166,7 @@ export function GuestsTab({
                       href={waShareUrl(guest.phone, messageForGuest(waMessage, guest.name, inviteUrl(origin, slug, guest.name)))}
                       target="_blank"
                       rel="noreferrer"
-                      onClick={() => markSent(guest)}
+                      onClick={() => actions.markSent(guest)}
                       title="Kirim WhatsApp"
                     >
                       <MessageCircle size={15} />
@@ -233,7 +174,7 @@ export function GuestsTab({
                     <button
                       type="button"
                       className={`${iconBtn} ${guest.is_sent ? "text-emerald-600" : ""}`}
-                      onClick={() => markSent(guest)}
+                      onClick={() => actions.markSent(guest)}
                       title={guest.is_sent ? "Tandai belum terkirim" : "Tandai sudah terkirim"}
                     >
                       <Check size={15} />
@@ -241,7 +182,7 @@ export function GuestsTab({
                     <button
                       type="button"
                       className={`${iconBtn} hover:text-rose-600`}
-                      onClick={() => remove(guest)}
+                      onClick={() => actions.remove(guest)}
                       title="Hapus"
                     >
                       <Trash2 size={15} />

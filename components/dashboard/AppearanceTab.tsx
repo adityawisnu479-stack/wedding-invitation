@@ -14,7 +14,8 @@ import {
   Upload,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { useDataStore } from "@/lib/store";
+import type { PhotoFolder, TrackItem } from "@/lib/store/types";
 import type { Invitation, TemplateId } from "@/lib/types";
 import { useToast } from "@/components/ui/Toast";
 import { useDashboardStore } from "./DashboardStoreContext";
@@ -216,12 +217,11 @@ function Toggle({
   );
 }
 
-type Track = { name: string; url: string };
-
 function MusicPicker() {
   const toast = useToast();
+  const store = useDataStore();
   const { invitation, actions } = useDashboardStore();
-  const [tracks, setTracks] = useState<Track[]>([]);
+  const [tracks, setTracks] = useState<TrackItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
@@ -229,40 +229,24 @@ function MusicPicker() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const fetchTracks = async (): Promise<Track[]> => {
-    const client = supabaseBrowser();
-    const [defaults, custom] = await Promise.all([
-      client.storage.from("wedding-music").list("defaults", { limit: 100 }),
-      client.storage.from("wedding-music").list("custom", { limit: 100 }),
-    ]);
-    const rows = [
-      ...(defaults.data ?? []).map((file: { name: string }) => ({ name: file.name, path: `defaults/${file.name}` })),
-      ...(custom.data ?? []).map((file: { name: string }) => ({ name: file.name, path: `custom/${file.name}` })),
-    ].filter((row) => /\.mp3$/i.test(row.name));
-
-    return rows.map((row) => ({
-      name: row.name.replace(/\.mp3$/i, "").replace(/^\d+-/, ""),
-      url: client.storage.from("wedding-music").getPublicUrl(row.path).data.publicUrl,
-    }));
-  };
-
   const reload = async () => {
     setLoading(true);
-    setTracks(await fetchTracks());
+    const res = await store.media.listTracks();
+    setTracks(res.data ?? []);
     setLoading(false);
   };
 
   useEffect(() => {
     let cancelled = false;
-    fetchTracks().then((rows) => {
+    store.media.listTracks().then((res) => {
       if (cancelled) return;
-      setTracks(rows);
+      setTracks(res.data ?? []);
       setLoading(false);
     });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [store]);
 
   const preview = (url: string) => {
     const audio = audioRef.current;
@@ -285,13 +269,10 @@ function MusicPicker() {
   };
 
   const upload = async (file: File) => {
-    if (!/\.mp3$/i.test(file.name)) return toast("Format harus .mp3", "error");
     setUploading(true);
-    const client = supabaseBrowser();
-    const path = `custom/${Date.now()}-${file.name.replace(/[^\w.-]+/g, "-")}`;
-    const { error } = await client.storage.from("wedding-music").upload(path, file, { contentType: "audio/mpeg" });
+    const res = await store.media.uploadTrack(file);
     setUploading(false);
-    if (error) return toast("Gagal mengunggah musik", "error");
+    if (res.error) return toast(res.error.message || "Gagal mengunggah musik", "error");
     toast("Musik terunggah");
     await reload();
   };
@@ -388,22 +369,21 @@ function PhotoUploader({
   onUploaded,
 }: {
   label: string;
-  folder: string;
+  folder: PhotoFolder;
   value?: string;
   onUploaded: (url: string) => void;
 }) {
   const toast = useToast();
+  const store = useDataStore();
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const upload = async (file: File) => {
     setUploading(true);
-    const client = supabaseBrowser();
-    const path = `${folder}/${Date.now()}-${file.name.replace(/[^\w.-]+/g, "-")}`;
-    const { error } = await client.storage.from("wedding-photos").upload(path, file, { upsert: true });
+    const res = await store.media.uploadPhoto(folder, file);
     setUploading(false);
-    if (error) return toast("Gagal mengunggah foto", "error");
-    onUploaded(client.storage.from("wedding-photos").getPublicUrl(path).data.publicUrl);
+    if (res.error || !res.data) return toast(res.error?.message || "Gagal mengunggah foto", "error");
+    onUploaded(res.data);
     toast(`${label} diperbarui`);
   };
 
@@ -447,23 +427,19 @@ function PhotoUploader({
 
 function GalleryUploader({ photos, onChange }: { photos: string[]; onChange: (photos: string[]) => void }) {
   const toast = useToast();
+  const store = useDataStore();
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const upload = async (files: FileList) => {
     setUploading(true);
-    const client = supabaseBrowser();
-    const uploaded: string[] = [];
-    for (const file of Array.from(files)) {
-      const path = `gallery/${Date.now()}-${file.name.replace(/[^\w.-]+/g, "-")}`;
-      const { error } = await client.storage.from("wedding-photos").upload(path, file, { upsert: true });
-      if (error) {
-        toast(`Gagal mengunggah ${file.name}`, "error");
-        continue;
-      }
-      uploaded.push(client.storage.from("wedding-photos").getPublicUrl(path).data.publicUrl);
-    }
+    const res = await store.media.uploadPhotos("gallery", Array.from(files));
     setUploading(false);
+    if (res.error) {
+      toast(res.error.message || "Gagal mengunggah foto", "error");
+      return;
+    }
+    const uploaded = res.data ?? [];
     if (uploaded.length > 0) {
       onChange([...photos, ...uploaded]);
       toast(`${uploaded.length} foto ditambahkan`);

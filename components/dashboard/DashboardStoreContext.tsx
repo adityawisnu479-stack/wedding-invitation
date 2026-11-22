@@ -13,6 +13,8 @@ export interface DashboardStore {
     addGuests: (rows: NewGuestInput[]) => Promise<{ success: boolean; error?: string }>;
     removeGuest: (guest: Guest) => Promise<{ success: boolean; error?: string }>;
     toggleGuestSent: (guest: Guest) => Promise<{ success: boolean; error?: string }>;
+    toggleWishHidden: (wish: Wish) => Promise<{ success: boolean; error?: string }>;
+    removeWish: (wish: Wish) => Promise<{ success: boolean; error?: string }>;
     updateInvitation: (patch: Partial<Invitation>, key?: string) => Promise<{ success: boolean; error?: string }>;
     updateContent: (patch: Partial<Invitation["content"]>, key?: string) => Promise<{ success: boolean; error?: string }>;
   };
@@ -34,7 +36,7 @@ export function DashboardProvider({
   const store = useDataStore();
   const [invitation, setInvitation] = useState<Invitation>(initialInvitation);
   const [guests, setGuests] = useState<Guest[]>(initialGuests);
-  const [wishes] = useState<Wish[]>(initialWishes);
+  const [wishes, setWishes] = useState<Wish[]>(initialWishes);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
@@ -72,6 +74,30 @@ export function DashboardProvider({
         setGuests((prev) =>
           prev.map((item) => (item.id === guest.id ? { ...item, is_sent: !item.is_sent } : item)),
         );
+      });
+      return { success: true };
+    },
+
+    toggleWishHidden: async (wish: Wish) => {
+      const { error } = await store.wishes.toggleHidden(wish.id, wish.is_hidden);
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      startTransition(() => {
+        setWishes((prev) =>
+          prev.map((item) => (item.id === wish.id ? { ...item, is_hidden: !item.is_hidden } : item)),
+        );
+      });
+      return { success: true };
+    },
+
+    removeWish: async (wish: Wish) => {
+      const { error } = await store.wishes.remove(wish.id);
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      startTransition(() => {
+        setWishes((prev) => prev.filter((item) => item.id !== wish.id));
       });
       return { success: true };
     },

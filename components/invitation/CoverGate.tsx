@@ -3,22 +3,23 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, MailOpen } from "lucide-react";
 import { formatDate } from "@/lib/format";
-import type { InvitationContent, TemplateId } from "@/lib/types";
+import type { InvitationContent } from "@/lib/types";
+import type { TemplateTheme } from "./template-engine/types";
 
 export function CoverGate({
   content,
-  template,
+  theme,
   guestName,
   onOpen,
 }: {
   content: InvitationContent;
-  template: TemplateId;
+  theme: TemplateTheme;
   guestName?: string;
   onOpen: () => void;
 }) {
   const reduced = useReducedMotion();
-  const luxury = template === "classic-luxury";
   const cover = content.photos.cover;
+  const { coverStyles, tone } = theme;
 
   return (
     <motion.section
@@ -34,23 +35,19 @@ export function CoverGate({
           <div className="absolute inset-0 bg-black/45" />
         </>
       ) : (
-        <div
-          className={`absolute inset-0 ${
-            luxury
-              ? "bg-[radial-gradient(circle_at_top,#1d3a2f,#0d1a16_60%)]"
-              : "bg-[radial-gradient(circle_at_top,#f6efe4,#e6ddcd_70%)]"
-          }`}
-        />
+        <div className={`absolute inset-0 ${coverStyles.backgroundClass}`} />
       )}
 
-      <div className={`absolute inset-5 rounded-[28px] ${luxury ? "ornament-frame opacity-60" : ""}`} />
+      {coverStyles.ornamentClass ? (
+        <div className={`absolute inset-5 rounded-[28px] ${coverStyles.ornamentClass}`} />
+      ) : null}
 
-      <div className={`relative z-10 ${cover ? "text-white" : luxury ? "text-cream" : "text-ink"}`}>
+      <div className={`relative z-10 ${cover ? "text-white" : tone === "dark" ? "text-cream" : "text-ink"}`}>
         <motion.p
           initial={reduced ? false : { opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.1 }}
-          className={`text-[11px] uppercase tracking-[0.45em] ${luxury ? "text-gold" : ""}`}
+          className={`text-[11px] uppercase tracking-[0.45em] ${coverStyles.eyebrowClass || ""}`}
         >
           The Wedding Of
         </motion.p>
@@ -59,10 +56,10 @@ export function CoverGate({
           initial={reduced ? false : { opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-          className={`mt-4 font-serif text-5xl leading-[1.05] sm:text-6xl ${luxury ? "font-display" : ""}`}
+          className={`mt-4 font-serif text-5xl leading-[1.05] sm:text-6xl ${coverStyles.titleFontClass || ""}`}
         >
           {content.groom.name}
-          <span className={`mx-2 inline-block text-3xl ${luxury ? "text-gold" : "opacity-60"}`}>&</span>
+          <span className={`mx-2 inline-block text-3xl ${coverStyles.ampersandClass || "opacity-60"}`}>&</span>
           {content.bride.name}
         </motion.h1>
 
@@ -90,9 +87,7 @@ export function CoverGate({
           onClick={onOpen}
           whileTap={{ scale: 0.97 }}
           whileHover={{ y: -2 }}
-          className={`mt-6 inline-flex min-h-12 items-center gap-2 rounded-full px-7 text-sm font-semibold shadow-lg transition ${
-            luxury ? "bg-gold text-luxury" : "bg-ink text-cream"
-          }`}
+          className={`mt-6 inline-flex min-h-12 items-center gap-2 rounded-full px-7 text-sm font-semibold shadow-lg transition ${coverStyles.buttonClass}`}
         >
           <MailOpen size={17} /> Buka Undangan
         </motion.button>

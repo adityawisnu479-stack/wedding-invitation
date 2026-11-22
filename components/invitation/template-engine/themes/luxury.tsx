@@ -121,6 +121,14 @@ export const luxuryTheme: TemplateTheme = {
   id: "classic-luxury",
   wrapperClass: "bg-luxury font-[family-name:var(--font-lato)] text-cream",
   tone: "dark",
+  coverStyles: {
+    backgroundClass: "bg-[radial-gradient(circle_at_top,#1d3a2f,#0d1a16_60%)]",
+    ornamentClass: "ornament-frame opacity-60",
+    eyebrowClass: "text-gold",
+    titleFontClass: "font-display",
+    ampersandClass: "text-gold",
+    buttonClass: "bg-gold text-luxury",
+  },
   renderHero: (props: HeroSectionProps) => <LuxuryHero {...props} />,
   renderCoupleCard: (props: CoupleCardProps) => <LuxuryCoupleCard {...props} />,
 };

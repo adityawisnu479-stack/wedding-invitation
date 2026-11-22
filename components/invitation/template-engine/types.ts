@@ -21,10 +21,20 @@ export interface FooterSectionProps {
   tone: Tone;
 }
 
+export interface CoverThemeStyles {
+  backgroundClass: string;
+  ornamentClass?: string;
+  eyebrowClass?: string;
+  titleFontClass?: string;
+  ampersandClass?: string;
+  buttonClass: string;
+}
+
 export interface TemplateTheme {
   id: TemplateId;
   wrapperClass: string;
   tone: Tone;
+  coverStyles: CoverThemeStyles;
   renderHero: (props: HeroSectionProps) => React.ReactNode;
   renderCoupleCard: (props: CoupleCardProps) => React.ReactNode;
   renderFooter?: (props: FooterSectionProps) => React.ReactNode;

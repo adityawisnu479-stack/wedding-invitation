@@ -4,21 +4,14 @@ import { motion } from "framer-motion";
 import { Eye, EyeOff, MessageSquareHeart, Trash2, UserCheck, UserX, Users } from "lucide-react";
 import { useState } from "react";
 import { attendanceLabel, relativeTime } from "@/lib/format";
-import { supabaseBrowser } from "@/lib/supabase/client";
-import type { Guest, Wish } from "@/lib/types";
+import type { Wish } from "@/lib/types";
 import { useToast } from "@/components/ui/Toast";
+import { useDashboardStore } from "./DashboardStoreContext";
 import { cardClass, iconBtn } from "./styles";
 
-export function OverviewTab({
-  guests,
-  wishes,
-  setWishes,
-}: {
-  guests: Guest[];
-  wishes: Wish[];
-  setWishes: React.Dispatch<React.SetStateAction<Wish[]>>;
-}) {
+export function OverviewTab() {
   const toast = useToast();
+  const { guests, wishes, actions } = useDashboardStore();
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const hadir = wishes.filter((wish) => wish.attendance === "hadir");
@@ -39,23 +32,18 @@ export function OverviewTab({
 
   const toggleHidden = async (wish: Wish) => {
     setBusyId(wish.id);
-    const { error } = await supabaseBrowser()
-      .from("rsvps_and_wishes")
-      .update({ is_hidden: !wish.is_hidden })
-      .eq("id", wish.id);
+    const res = await actions.toggleWishHidden(wish);
     setBusyId(null);
-    if (error) return toast("Gagal mengubah ucapan", "error");
-    setWishes((prev) => prev.map((item) => (item.id === wish.id ? { ...item, is_hidden: !item.is_hidden } : item)));
+    if (!res.success) return toast(res.error || "Gagal mengubah ucapan", "error");
     toast(wish.is_hidden ? "Ucapan ditampilkan lagi" : "Ucapan disembunyikan dari tamu");
   };
 
   const remove = async (wish: Wish) => {
     if (!window.confirm(`Hapus ucapan dari ${wish.guest_name}?`)) return;
     setBusyId(wish.id);
-    const { error } = await supabaseBrowser().from("rsvps_and_wishes").delete().eq("id", wish.id);
+    const res = await actions.removeWish(wish);
     setBusyId(null);
-    if (error) return toast("Gagal menghapus ucapan", "error");
-    setWishes((prev) => prev.filter((item) => item.id !== wish.id));
+    if (!res.success) return toast(res.error || "Gagal menghapus ucapan", "error");
     toast("Ucapan dihapus");
   };
 

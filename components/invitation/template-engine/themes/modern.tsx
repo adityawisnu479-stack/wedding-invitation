@@ -116,6 +116,13 @@ export const modernTheme: TemplateTheme = {
   id: "modern-minimalist",
   wrapperClass: "bg-cream text-ink",
   tone: "light",
+  coverStyles: {
+    backgroundClass: "bg-[radial-gradient(circle_at_top,#f6efe4,#e6ddcd_70%)]",
+    eyebrowClass: "opacity-75",
+    titleFontClass: "font-serif",
+    ampersandClass: "opacity-60",
+    buttonClass: "bg-ink text-cream",
+  },
   renderHero: (props: HeroSectionProps) => <ModernHero {...props} />,
   renderCoupleCard: (props: CoupleCardProps) => <ModernCoupleCard {...props} />,
 };

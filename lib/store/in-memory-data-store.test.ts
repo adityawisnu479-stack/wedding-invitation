@@ -44,6 +44,15 @@ test("InMemoryDataStore: wishes.submit menambahkan doa baru dan memvalidasi inpu
   const state = store.getState();
   assert.equal(state.wishes.length, 1);
   assert.equal(state.wishes[0].id, success.data.id);
+
+  // Toggle hidden
+  const wishId = success.data.id;
+  await store.wishes.toggleHidden(wishId, false);
+  assert.equal(store.getState().wishes[0].is_hidden, true);
+
+  // Remove wish
+  await store.wishes.remove(wishId);
+  assert.equal(store.getState().wishes.length, 0);
 });
 
 test("InMemoryDataStore: guests.add, toggleSent, dan remove mengelola daftar tamu", async () => {
@@ -97,4 +106,43 @@ test("InMemoryDataStore: invitation.update memutakhirkan properti undangan", asy
   const inv = store.getState().invitations.get("inv-1");
   assert.equal(inv?.active_template, "classic-luxury");
   assert.equal(inv?.show_gift, false);
+});
+
+test("InMemoryDataStore: media.listTracks, uploadTrack, and uploadPhoto mengelola aset media", async () => {
+  const store = new InMemoryDataStore();
+
+  // List initial tracks
+  const tracks = await store.media.listTracks();
+  assert.ok(tracks.data);
+  assert.equal(tracks.data.length, 2);
+
+  // Upload track valid
+  const fakeMp3 = new File(["dummy audio"], "wedding-song.mp3", { type: "audio/mpeg" });
+  const uploadRes = await store.media.uploadTrack(fakeMp3);
+  assert.ok(uploadRes.data);
+  assert.equal(uploadRes.data.name, "wedding-song");
+  assert.match(uploadRes.data.url, /mock-storage\.local\/music/);
+
+  // Upload track invalid extension
+  const fakeTxt = new File(["not audio"], "test.txt", { type: "text/plain" });
+  const invalidRes = await store.media.uploadTrack(fakeTxt);
+  assert.equal(invalidRes.data, null);
+  assert.match(invalidRes.error?.message ?? "", /Format musik harus \.mp3/);
+
+  // Upload photo
+  const fakeImg = new File(["dummy img"], "cover.jpg", { type: "image/jpeg" });
+  const photoRes = await store.media.uploadPhoto("cover", fakeImg);
+  assert.ok(photoRes.data);
+  assert.match(photoRes.data, /mock-storage\.local\/photos\/cover/);
+
+  // Upload batch photos (gallery)
+  const galleryImgs = [
+    new File(["img1"], "photo1.jpg", { type: "image/jpeg" }),
+    new File(["img2"], "photo2.jpg", { type: "image/jpeg" }),
+  ];
+  const galleryRes = await store.media.uploadPhotos("gallery", galleryImgs);
+  assert.ok(galleryRes.data);
+  assert.equal(galleryRes.data.length, 2);
+  assert.match(galleryRes.data[0], /mock-storage\.local\/photos\/gallery/);
+  assert.match(galleryRes.data[1], /mock-storage\.local\/photos\/gallery/);
 });
